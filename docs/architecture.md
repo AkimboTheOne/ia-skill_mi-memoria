@@ -10,6 +10,8 @@ El runtime opera sobre el vault, nunca dentro del vault. La escritura al vault r
 
 `remember` escribe por defecto memoria curada en `memory/` del vault configurado. La memoria del runtime solo se usa con `remember --scope runtime` para decisiones o convenciones que modulan el comportamiento del skill.
 
+`note` es el tipo primitivo del CORE. Las plantillas CORE viven en `skills/core/templates` y actúan como fallback cuando falta la plantilla correspondiente en `vault/templates`. Las plantillas del usuario en el vault siempre tienen prioridad.
+
 ## Baseline v0.1
 
 - Python estándar.

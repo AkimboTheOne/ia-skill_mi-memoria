@@ -123,6 +123,45 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertEqual(data["scope"], "vault")
             self.assertEqual(Path(data["output_path"]).parent, vault / "memory")
 
+    def test_remember_uses_core_template_when_vault_template_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            (vault / "templates" / "memory.md").unlink()
+            result = self.run_cli(
+                "remember",
+                "--summary",
+                "Memoria persistente aun sin plantilla en el vault.",
+                "--vault-path",
+                str(vault),
+                "--json",
+            )
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["template"]["source"], "core")
+            self.assertTrue(data["warnings"])
+            self.assertIn("plantilla CORE", data["warnings"][0])
+
+    def test_remember_prefers_vault_template(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            (vault / "templates" / "memory.md").write_text(
+                "---\ntitle:\ntype: memory\nstatus: active\ncreated:\nupdated:\ntags: []\naliases: []\nsource:\n---\n\n# Título\n\n## Memoria\n\n## Contexto local\n",
+                encoding="utf-8",
+            )
+            result = self.run_cli(
+                "remember",
+                "--summary",
+                "Memoria desde plantilla personalizada.",
+                "--vault-path",
+                str(vault),
+                "--json",
+            )
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["template"]["source"], "vault")
+            output = Path(data["output_path"])
+            self.assertIn("## Contexto local", output.read_text(encoding="utf-8"))
+
     def test_remember_runtime_scope(self) -> None:
         result = self.run_cli(
             "remember",
@@ -178,6 +217,53 @@ class MiMemoriaCliTests(unittest.TestCase):
             applied_data = json.loads(applied.stdout)
             self.assertTrue(applied_data["ok"])
             self.assertTrue(Path(applied_data["output_path"]).exists())
+
+    def test_normalize_write_uses_core_note_template_when_vault_template_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            (vault / "templates" / "note.md").unlink()
+            note = Path(tmp) / "note.md"
+            note.write_text("# Nota simple\n\nContenido.", encoding="utf-8")
+            result = self.run_cli(
+                "run",
+                "normalize",
+                "--input",
+                str(note),
+                "--write",
+                "--vault-path",
+                str(vault),
+                "--json",
+            )
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["template"]["source"], "core")
+            self.assertTrue(data["warnings"])
+            self.assertIn("vault/templates/note.md", data["warnings"][0])
+
+    def test_normalize_write_prefers_vault_note_template(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            (vault / "templates" / "note.md").write_text(
+                "---\ntitle:\ntype: note\nstatus: draft\ncreated:\nupdated:\ntags: []\naliases: []\nsource:\n---\n\n# Título\n\n## Resumen\n\n## Desarrollo\n\n## Relaciones\n\n## Pendientes\n\n## Contexto local\n",
+                encoding="utf-8",
+            )
+            note = Path(tmp) / "note.md"
+            note.write_text("# Nota con template\n\nContenido.", encoding="utf-8")
+            result = self.run_cli(
+                "run",
+                "normalize",
+                "--input",
+                str(note),
+                "--write",
+                "--vault-path",
+                str(vault),
+                "--json",
+            )
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["template"]["source"], "vault")
+            output = Path(data["output_path"])
+            self.assertIn("## Contexto local", output.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

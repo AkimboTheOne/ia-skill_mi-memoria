@@ -49,6 +49,7 @@ Activaciones como `/mi-memoria review-docs`, `/mi-memoria align-readme` o `/mi-m
 
 - Producir Markdown válido.
 - Mantener frontmatter consistente.
+- Priorizar plantillas del vault y usar plantillas CORE solo como fallback con warning.
 - Evitar metadata innecesaria.
 - Priorizar claridad sobre creatividad.
 - No escribir al vault sin una operación explícita.

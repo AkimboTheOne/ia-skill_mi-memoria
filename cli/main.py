@@ -16,12 +16,20 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "workspace"
 PREVIEW_DIR = WORKSPACE / "preview"
 LOG_FILE = ROOT / "logs" / "operations.log"
+CORE_TEMPLATE_DIR = ROOT / "skills" / "core" / "templates"
 
 REQUIRED_FIELDS = ["title", "type", "status", "created", "updated", "tags"]
 VALID_TYPES = ["note", "decision", "project", "resource", "area", "memory"]
 VALID_STATUSES = ["draft", "review", "active", "archived"]
 VALID_DESTINATIONS = ["00-inbox", "10-areas", "20-projects", "30-resources", "40-archive"]
 STANDARD_SECTIONS = ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
+
+
+def core_template_warning(note_type: str) -> str:
+    return (
+        f"No existe vault/templates/{note_type}.md; se usó la plantilla CORE por defecto. "
+        "Ejecuta scripts/skill_setup.sh para restaurar plantillas base o crea tu propia plantilla en el vault."
+    )
 
 
 def now_date() -> str:
@@ -45,6 +53,29 @@ def ensure_runtime_dirs() -> None:
         ROOT / "memory" / "conventions",
     ]:
         path.mkdir(parents=True, exist_ok=True)
+
+
+def resolve_template(note_type: str, vault: Path | None = None) -> dict[str, Any]:
+    filename = f"{note_type}.md"
+    if vault:
+        vault_template = vault / "templates" / filename
+        if vault_template.is_file():
+            return {
+                "source": "vault",
+                "path": str(vault_template),
+                "content": vault_template.read_text(encoding="utf-8"),
+                "warnings": [],
+            }
+    core_template = CORE_TEMPLATE_DIR / filename
+    if core_template.is_file():
+        warnings = [core_template_warning(note_type)] if vault else []
+        return {
+            "source": "core",
+            "path": str(core_template),
+            "content": core_template.read_text(encoding="utf-8"),
+            "warnings": warnings,
+        }
+    raise ValueError(f"Plantilla CORE no disponible para tipo: {note_type}")
 
 
 def emit(data: dict[str, Any], as_json: bool) -> None:
@@ -204,10 +235,33 @@ def build_frontmatter(metadata: dict[str, Any]) -> str:
     )
 
 
-def normalize_markdown(text: str, source: str) -> dict[str, Any]:
+def render_template(content: str, metadata: dict[str, Any], sections: dict[str, str]) -> str:
+    body = strip_existing_frontmatter(content)
+    frontmatter = build_frontmatter(metadata)
+    title = metadata["title"]
+    lines = body.splitlines()
+    for index, line in enumerate(lines):
+        if re.match(r"^#\s+", line):
+            lines[index] = f"# {title}"
+            break
+    else:
+        lines.insert(0, f"# {title}")
+    rendered_body = "\n".join(lines).strip()
+    for section, value in sections.items():
+        replacement = f"## {section}\n\n{value.strip()}"
+        pattern = re.compile(rf"## {re.escape(section)}(?:\n.*?)(?=\n## |\Z)", re.DOTALL)
+        if pattern.search(rendered_body):
+            rendered_body = pattern.sub(replacement, rendered_body)
+        else:
+            rendered_body = f"{rendered_body}\n\n{replacement}".strip()
+    return f"{frontmatter}\n\n{rendered_body}\n"
+
+
+def normalize_markdown(text: str, source: str, vault: Path | None = None) -> dict[str, Any]:
     body = strip_existing_frontmatter(text)
     title = extract_title(body)
     note_type = infer_type(body, title)
+    template = resolve_template(note_type if note_type in {"note", "memory"} else "note", vault)
     destination = classify(note_type, body)
     date = now_date()
     filename = f"{date}-{slugify(title)}.md"
@@ -223,15 +277,15 @@ def normalize_markdown(text: str, source: str) -> dict[str, Any]:
         "source": source,
     }
     relation_lines = "\n".join(f"- [[{link}]]" for link in links) if links else "- Sin relaciones sugeridas."
-    normalized = "\n\n".join(
-        [
-            build_frontmatter(metadata),
-            f"# {title}",
-            "## Resumen\n\n" + summarize(body),
-            "## Desarrollo\n\n" + (body or "Contenido pendiente."),
-            "## Relaciones\n\n" + relation_lines,
-            "## Pendientes\n\n- Revisar y consolidar esta nota antes de moverla a estado activo.",
-        ]
+    normalized = render_template(
+        template["content"],
+        metadata,
+        {
+            "Resumen": summarize(body),
+            "Desarrollo": body or "Contenido pendiente.",
+            "Relaciones": relation_lines,
+            "Pendientes": "- Revisar y consolidar esta nota antes de moverla a estado activo.",
+        },
     )
     validation = validate_text(normalized, filename)
     return {
@@ -240,6 +294,12 @@ def normalize_markdown(text: str, source: str) -> dict[str, Any]:
         "classification": destination,
         "metadata": metadata,
         "wikilinks": links,
+        "template": {
+            "type": note_type if note_type in {"note", "memory"} else "note",
+            "source": template["source"],
+            "path": template["path"],
+        },
+        "warnings": template["warnings"],
         "validation": validation,
     }
 
@@ -403,15 +463,17 @@ def command_run(args: argparse.Namespace) -> int:
         emit({"ok": False, "message": "Debes usar --preview o --write.", "errors": ["Modo de escritura no especificado."]}, args.json)
         return 2
     try:
-        text, source = read_text_input(args.input)
-        normalized = normalize_markdown(text, source)
         ensure_runtime_dirs()
         if args.preview:
+            text, source = read_text_input(args.input)
+            normalized = normalize_markdown(text, source)
             output = unique_path(PREVIEW_DIR / normalized["filename"])
             proposed = Path(normalized["classification"]) / normalized["filename"]
             mode = "preview"
         else:
             vault = resolve_vault_path(args.vault_path)
+            text, source = read_text_input(args.input)
+            normalized = normalize_markdown(text, source, vault)
             output = unique_path(vault / normalized["classification"] / normalized["filename"])
             ensure_inside(vault, output)
             output.parent.mkdir(parents=True, exist_ok=True)
@@ -428,7 +490,8 @@ def command_run(args: argparse.Namespace) -> int:
             "proposed_vault_path": str(proposed),
             "filename": normalized["filename"],
             "classification": normalized["classification"],
-            "warnings": normalized["validation"]["warnings"],
+            "template": normalized["template"],
+            "warnings": normalized["warnings"] + normalized["validation"]["warnings"],
             "validation": normalized["validation"],
             "message": f"{mode.capitalize()} generado: {output}",
         }
@@ -469,31 +532,30 @@ def command_remember(args: argparse.Namespace) -> int:
         title = summary[:60]
         filename = f"{now_date()}-{slugify(title)}.md"
         if args.scope == "runtime":
+            template = resolve_template("memory")
             output = unique_path(ROOT / "memory" / "hot" / filename)
         else:
             vault = resolve_vault_path(args.vault_path)
+            template = resolve_template("memory", vault)
             output = unique_path(vault / "memory" / filename)
             ensure_inside(vault, output)
             output.parent.mkdir(parents=True, exist_ok=True)
-        content = "\n".join(
-            [
-                "---",
-                f'title: {json.dumps(title, ensure_ascii=False)}',
-                "type: memory",
-                "status: active",
-                f"created: {now_date()}",
-                f"updated: {now_date()}",
-                'tags: ["mi-memoria", "memory"]',
-                "source: remember",
-                "---",
-                "",
-                f"# {title}",
-                "",
-                "## Memoria",
-                "",
-                summary,
-                "",
-            ]
+        metadata = {
+            "title": title,
+            "type": "memory",
+            "status": "active",
+            "created": now_date(),
+            "updated": now_date(),
+            "tags": ["mi-memoria", "memory"],
+            "aliases": [],
+            "source": "remember",
+        }
+        content = render_template(
+            template["content"],
+            metadata,
+            {
+                "Memoria": summary,
+            },
         )
         output.write_text(content, encoding="utf-8")
         log_operation(f"remember.{args.scope}", "summary", str(output), "ok")
@@ -502,6 +564,12 @@ def command_remember(args: argparse.Namespace) -> int:
                 "ok": True,
                 "scope": args.scope,
                 "output_path": str(output),
+                "template": {
+                    "type": "memory",
+                    "source": template["source"],
+                    "path": template["path"],
+                },
+                "warnings": template["warnings"],
                 "message": f"Memoria guardada: {output}",
             },
             args.json,

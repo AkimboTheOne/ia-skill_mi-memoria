@@ -58,13 +58,15 @@ Con el vault configurado, `remember` escribe por defecto en `memory/` del vault.
 ./bin/mi-memoria remember --summary "Convención interna del skill." --scope runtime
 ```
 
+Las plantillas del vault tienen prioridad. Si falta una plantilla primitiva del vault, el runtime usa la plantilla CORE de `skills/core/templates` y emite un warning recomendando restaurarla con `scripts/skill_setup.sh` o crear una plantilla propia.
+
 ## Inicializar un vault
 
 ```bash
 ./scripts/skill_setup.sh /path/to/mi-memoria-vault
 ```
 
-El script crea la estructura mínima y las plantillas `note` y `memory` sin sobrescribir archivos existentes. Puede volver a ejecutarse sobre un vault existente para agregar plantillas faltantes.
+El script crea la estructura mínima y copia las plantillas CORE `note` y `memory` sin sobrescribir archivos existentes. Puede volver a ejecutarse sobre un vault existente para agregar plantillas faltantes.
 
 ## Pruebas
 

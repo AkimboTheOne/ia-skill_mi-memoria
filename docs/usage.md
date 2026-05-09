@@ -32,6 +32,12 @@
 
 `remember` guarda memoria curada en `memory/` del vault por defecto. También puede usar `MI_MEMORIA_VAULT_PATH`.
 
+Si falta `vault/templates/memory.md`, el runtime usa la plantilla CORE y reporta un warning. Para restaurar plantillas base sin sobrescribir las propias:
+
+```bash
+./scripts/skill_setup.sh /path/to/vault
+```
+
 La memoria interna del runtime es una excepción explícita para modular o actualizar el comportamiento del skill:
 
 ```bash

@@ -11,6 +11,8 @@
 - `remember` sin vault configurado falla salvo que se indique `--scope runtime`.
 - `scripts/skill_setup.sh` inicializa un vault externo.
 - `scripts/skill_setup.sh` crea o completa templates `note.md` y `memory.md` sin sobrescribirlos.
+- Las plantillas del vault tienen prioridad sobre las plantillas CORE del runtime.
+- Si falta una plantilla primitiva en el vault, el runtime usa CORE y emite warning.
 - El vault no recibe logs, scripts ni dependencias del runtime.
 - Las capacidades documentadas como actuales coinciden con `./bin/mi-memoria capabilities --json`.
 - La suite `make test` pasa antes de publicar cambios documentales.
