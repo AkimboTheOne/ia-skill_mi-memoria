@@ -5,6 +5,7 @@
 - CLI local.
 - Normalización Markdown.
 - Preview seguro.
+- Workspace curatorial visible en el vault.
 - Escritura explícita.
 - Setup de vault externo.
 - Memoria curada explícita.
@@ -23,6 +24,8 @@
 - Automatización masiva.
 
 Toda expansión debe demostrar necesidad operacional, repetibilidad y reducción concreta de trabajo manual.
+
+El workspace visible del vault pertenece al alcance v0.1 porque reduce desborde y caos durante curaduría manual en Obsidian sin introducir automatización adicional ni lógica operacional dentro del vault.
 
 ## Roadmap documental
 
