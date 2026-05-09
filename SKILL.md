@@ -1,3 +1,8 @@
+---
+name: mi-memoria
+description: Use this runtime when the user wants to organize, normalize, validate, remember, or apply curated Markdown knowledge for an external Obsidian vault, with explicit preview/write boundaries.
+---
+
 # mi-memoria
 
 ## Activación

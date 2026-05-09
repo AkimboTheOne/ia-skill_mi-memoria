@@ -1,3 +1,8 @@
+---
+name: mi-memoria-normalize
+description: Transform free-form Markdown into a normalized Obsidian note with frontmatter, standard sections, local preview output, and explicit write behavior for external vault application.
+---
+
 # normalize
 
 ## Responsabilidad
