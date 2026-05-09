@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import unicodedata
 from datetime import datetime
@@ -16,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "workspace"
 PREVIEW_DIR = WORKSPACE / "preview"
 TEMPLATE_PREVIEW_DIR = PREVIEW_DIR / "templates"
+VAULT_WORKSPACE = Path("workspace")
+VAULT_PREVIEW_DIR = VAULT_WORKSPACE / "preview"
 LOG_FILE = ROOT / "logs" / "operations.log"
 CORE_TEMPLATE_DIR = ROOT / "skills" / "core" / "templates"
 
@@ -87,6 +90,17 @@ def list_template_files(path: Path) -> list[dict[str, str]]:
     for template in sorted(path.glob("*.md")):
         templates.append({"name": template.stem, "path": str(template)})
     return templates
+
+
+def ensure_vault_workspace_dirs(vault: Path) -> None:
+    for path in [
+        vault / VAULT_WORKSPACE / "inbox",
+        vault / VAULT_WORKSPACE / "processing",
+        vault / VAULT_PREVIEW_DIR,
+        vault / VAULT_WORKSPACE / "exports",
+    ]:
+        ensure_inside(vault, path)
+        path.mkdir(parents=True, exist_ok=True)
 
 
 def emit(data: dict[str, Any], as_json: bool) -> None:
@@ -533,11 +547,87 @@ def resolve_vault_path(vault_path: str | None) -> Path:
     return vault
 
 
+def resolve_optional_vault_path(vault_path: str | None = None) -> Path | None:
+    raw = vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH")
+    if not raw:
+        return None
+    return resolve_vault_path(raw)
+
+
 def ensure_inside(base: Path, target: Path) -> None:
     base_resolved = base.resolve()
     target_resolved = target.resolve()
     if base_resolved != target_resolved and base_resolved not in target_resolved.parents:
         raise ValueError(f"Destino fuera del vault permitido: {target}")
+
+
+def run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, text=True, capture_output=True, check=False)
+
+
+def command_upgrade(args: argparse.Namespace) -> int:
+    runtime = str(ROOT)
+    command = ["git", "-C", runtime, "pull", "--ff-only"]
+    try:
+        git_dir = run_git_command(["git", "-C", runtime, "rev-parse", "--git-dir"])
+        if git_dir.returncode != 0:
+            emit(
+                {
+                    "ok": False,
+                    "command": "upgrade",
+                    "runtime": runtime,
+                    "stdout": git_dir.stdout,
+                    "stderr": git_dir.stderr,
+                    "returncode": git_dir.returncode,
+                    "message": "No se pudo actualizar: el runtime no está dentro de un repositorio Git.",
+                },
+                args.json,
+            )
+            return 2
+        remote = run_git_command(["git", "-C", runtime, "remote", "get-url", "origin"])
+        if remote.returncode != 0:
+            emit(
+                {
+                    "ok": False,
+                    "command": "upgrade",
+                    "runtime": runtime,
+                    "stdout": remote.stdout,
+                    "stderr": remote.stderr,
+                    "returncode": remote.returncode,
+                    "message": "No se pudo actualizar: el runtime no tiene remoto origin configurado.",
+                },
+                args.json,
+            )
+            return 2
+        result = run_git_command(command)
+        ok = result.returncode == 0
+        emit(
+            {
+                "ok": ok,
+                "command": "upgrade",
+                "runtime": runtime,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "returncode": result.returncode,
+                "message": "Skill actualizado con git pull --ff-only." if ok else "No se pudo actualizar el skill con git pull --ff-only.",
+            },
+            args.json,
+        )
+        return 0 if ok else 1
+    except FileNotFoundError as exc:
+        emit(
+            {
+                "ok": False,
+                "command": "upgrade",
+                "runtime": runtime,
+                "stdout": "",
+                "stderr": str(exc),
+                "returncode": 127,
+                "message": "No se pudo actualizar: Git no está disponible.",
+            },
+            args.json,
+        )
+        return 2
 
 
 def command_capabilities(args: argparse.Namespace) -> int:
@@ -556,6 +646,7 @@ def command_capabilities(args: argparse.Namespace) -> int:
             "remember",
             "apply",
             "template",
+            "upgrade",
         ],
         "types": VALID_TYPES,
         "statuses": VALID_STATUSES,
@@ -578,14 +669,34 @@ def command_explain(args: argparse.Namespace) -> int:
 
 def command_context(args: argparse.Namespace) -> int:
     vault = os.environ.get("MI_MEMORIA_VAULT_PATH", "")
+    vault_workspace = ""
+    if vault:
+        try:
+            vault_workspace = str(resolve_vault_path(vault) / VAULT_WORKSPACE)
+        except ValueError:
+            vault_workspace = ""
     data = {
         "ok": True,
         "runtime": str(ROOT),
         "workspace": str(WORKSPACE),
         "vault": vault,
+        "vault_workspace": vault_workspace,
         "language": os.environ.get("MI_MEMORIA_DEFAULT_LANGUAGE", "es"),
     }
-    emit(data if args.json else {**data, "message": f"Runtime: {ROOT}\nWorkspace: {WORKSPACE}\nVault: {vault or '(no configurado)'}"}, args.json)
+    emit(
+        data
+        if args.json
+        else {
+            **data,
+            "message": (
+                f"Runtime: {ROOT}\n"
+                f"Workspace runtime: {WORKSPACE}\n"
+                f"Vault: {vault or '(no configurado)'}\n"
+                f"Workspace vault: {vault_workspace or '(no configurado)'}"
+            ),
+        },
+        args.json,
+    )
     return 0
 
 
@@ -594,8 +705,13 @@ def command_ask(args: argparse.Namespace) -> int:
     lowered = text.lower()
     if any(term in lowered for term in ["normaliza", "organiza", "clasifica", "nota estructurada", "markdown"]):
         normalized = normalize_markdown(text, "ask")
-        destination = unique_path(PREVIEW_DIR / normalized["filename"])
         ensure_runtime_dirs()
+        vault = resolve_optional_vault_path()
+        if vault:
+            ensure_vault_workspace_dirs(vault)
+            destination = unique_path(vault / VAULT_PREVIEW_DIR / normalized["filename"])
+        else:
+            destination = unique_path(PREVIEW_DIR / normalized["filename"])
         destination.write_text(normalized["content"], encoding="utf-8")
         log_operation("ask.normalize.preview", "inline", str(destination), "ok")
         emit(
@@ -627,8 +743,13 @@ def command_run(args: argparse.Namespace) -> int:
         ensure_runtime_dirs()
         if args.preview:
             text, source = read_text_input(args.input)
-            normalized = normalize_markdown(text, source)
-            output = unique_path(PREVIEW_DIR / normalized["filename"])
+            vault = resolve_optional_vault_path(args.vault_path)
+            normalized = normalize_markdown(text, source, vault)
+            if vault:
+                ensure_vault_workspace_dirs(vault)
+                output = unique_path(vault / VAULT_PREVIEW_DIR / normalized["filename"])
+            else:
+                output = unique_path(PREVIEW_DIR / normalized["filename"])
             proposed = Path(normalized["classification"]) / normalized["filename"]
             mode = "preview"
         else:
@@ -892,12 +1013,15 @@ def command_remember(args: argparse.Namespace) -> int:
 def command_apply(args: argparse.Namespace) -> int:
     try:
         source = Path(args.input).resolve()
+        vault = resolve_vault_path(args.vault_path)
         preview_root = PREVIEW_DIR.resolve()
-        if preview_root != source and preview_root not in source.parents:
-            raise ValueError("apply solo acepta archivos dentro de workspace/preview.")
+        vault_preview_root = (vault / VAULT_PREVIEW_DIR).resolve()
+        source_in_runtime_preview = preview_root == source or preview_root in source.parents
+        source_in_vault_preview = vault_preview_root == source or vault_preview_root in source.parents
+        if not source_in_runtime_preview and not source_in_vault_preview:
+            raise ValueError("apply solo acepta archivos dentro de workspace/preview del runtime o del vault.")
         if source.suffix != ".md" or not source.is_file():
             raise ValueError("El input de apply debe ser un archivo Markdown existente.")
-        vault = resolve_vault_path(args.vault_path)
         text = source.read_text(encoding="utf-8")
         validation = validate_text(text, source.name)
         if not validation["ok"]:
@@ -957,6 +1081,10 @@ def build_parser() -> argparse.ArgumentParser:
     capabilities = sub.add_parser("capabilities")
     capabilities.add_argument("--json", action="store_true")
     capabilities.set_defaults(func=command_capabilities)
+
+    upgrade = sub.add_parser("upgrade")
+    upgrade.add_argument("--json", action="store_true")
+    upgrade.set_defaults(func=command_upgrade)
 
     run = sub.add_parser("run")
     run.add_argument("skill")

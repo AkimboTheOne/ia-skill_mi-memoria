@@ -5,28 +5,45 @@ import os
 import subprocess
 import tempfile
 import unittest
+from argparse import Namespace
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
+from unittest.mock import patch
+
+from cli import main as cli_main
 
 
 ROOT = Path(__file__).resolve().parents[1]
 BIN = ROOT / "bin" / "mi-memoria"
+TEST_TMP = ROOT / "tmp" / "tests"
+
+
+@contextmanager
+def runtime_temp_dir() -> Iterator[Path]:
+    TEST_TMP.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=TEST_TMP) as tmp:
+        yield Path(tmp)
 
 
 class MiMemoriaCliTests(unittest.TestCase):
     def run_cli(
-        self, *args: str, check: bool = True, env: dict[str, str] | None = None
+        self,
+        *args: str,
+        check: bool = True,
+        env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
-        process_env = os.environ.copy()
-        process_env.pop("MI_MEMORIA_VAULT_PATH", None)
+        subprocess_env = os.environ.copy()
+        subprocess_env.pop("MI_MEMORIA_VAULT_PATH", None)
         if env:
-            process_env.update(env)
+            subprocess_env.update(env)
         result = subprocess.run(
             ["python3", str(BIN), *args],
             cwd=ROOT,
-            env=process_env,
             text=True,
             capture_output=True,
             check=False,
+            env=subprocess_env,
         )
         if check and result.returncode != 0:
             self.fail(f"command failed: {result.args}\nstdout={result.stdout}\nstderr={result.stderr}")
@@ -39,10 +56,70 @@ class MiMemoriaCliTests(unittest.TestCase):
         self.assertIn("normalize", data["skills"])
         self.assertIn("memory", data["types"])
         self.assertIn("template", data["commands"])
+        self.assertIn("upgrade", data["commands"])
+
+    def test_upgrade_invokes_scoped_git_pull(self) -> None:
+        calls: list[list[str]] = []
+
+        def fake_git(args: list[str]) -> subprocess.CompletedProcess[str]:
+            calls.append(args)
+            return subprocess.CompletedProcess(args, 0, "ok\n", "")
+
+        with patch.object(cli_main, "run_git_command", side_effect=fake_git), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[0], ["git", "-C", str(cli_main.ROOT), "rev-parse", "--git-dir"])
+        self.assertEqual(calls[1], ["git", "-C", str(cli_main.ROOT), "remote", "get-url", "origin"])
+        self.assertEqual(calls[2], ["git", "-C", str(cli_main.ROOT), "pull", "--ff-only"])
+        data = json.loads(printed.call_args.args[0])
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["command"], "upgrade")
+
+    def test_upgrade_reports_git_pull_error(self) -> None:
+        def fake_git(args: list[str]) -> subprocess.CompletedProcess[str]:
+            if args[-1] == "--git-dir":
+                return subprocess.CompletedProcess(args, 0, ".git\n", "")
+            if args[-2:] == ["get-url", "origin"]:
+                return subprocess.CompletedProcess(args, 0, "git@example.com:repo.git\n", "")
+            return subprocess.CompletedProcess(args, 1, "", "fatal: Not possible to fast-forward\n")
+
+        with patch.object(cli_main, "run_git_command", side_effect=fake_git), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 1)
+        data = json.loads(printed.call_args.args[0])
+        self.assertFalse(data["ok"])
+        self.assertEqual(data["returncode"], 1)
+        self.assertIn("fast-forward", data["stderr"])
+
+    def test_upgrade_reports_missing_origin_remote(self) -> None:
+        def fake_git(args: list[str]) -> subprocess.CompletedProcess[str]:
+            if args[-1] == "--git-dir":
+                return subprocess.CompletedProcess(args, 0, ".git\n", "")
+            return subprocess.CompletedProcess(args, 2, "", "error: No such remote 'origin'\n")
+
+        with patch.object(cli_main, "run_git_command", side_effect=fake_git), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 2)
+        data = json.loads(printed.call_args.args[0])
+        self.assertFalse(data["ok"])
+        self.assertIn("remoto origin", data["message"])
+
+    def test_upgrade_reports_non_git_runtime(self) -> None:
+        result = subprocess.CompletedProcess(["git"], 128, "", "fatal: not a git repository\n")
+        with patch.object(cli_main, "run_git_command", return_value=result), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 2)
+        data = json.loads(printed.call_args.args[0])
+        self.assertFalse(data["ok"])
+        self.assertIn("repositorio Git", data["message"])
 
     def test_normalize_preview_and_validate(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            note = Path(tmp) / "note.md"
+        with runtime_temp_dir() as tmp:
+            note = tmp / "note.md"
             note.write_text("# Decisión de arquitectura\n\nSe adopta Python estándar.", encoding="utf-8")
             result = self.run_cli("run", "normalize", "--input", str(note), "--preview", "--json")
             data = json.loads(result.stdout)
@@ -57,8 +134,8 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertTrue(validation_data["ok"])
 
     def test_write_requires_vault(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            note = Path(tmp) / "note.md"
+        with runtime_temp_dir() as tmp:
+            note = tmp / "note.md"
             note.write_text("# Nota\n\nContenido.", encoding="utf-8")
             result = self.run_cli("run", "normalize", "--input", str(note), "--write", "--json", check=False)
             self.assertNotEqual(result.returncode, 0)
@@ -66,8 +143,8 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertFalse(data["ok"])
 
     def test_validate_invalid_markdown(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            invalid = Path(tmp) / "invalid.md"
+        with runtime_temp_dir() as tmp:
+            invalid = tmp / "invalid.md"
             invalid.write_text("# Sin frontmatter\n", encoding="utf-8")
             result = self.run_cli("validate", "--input", str(invalid), "--json", check=False)
             self.assertEqual(result.returncode, 1)
@@ -339,13 +416,19 @@ class MiMemoriaCliTests(unittest.TestCase):
         self.assertIn("Falta vault", data["message"])
 
     def test_setup_vault_and_apply(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            vault = self.setup_vault(tmp)
+        with runtime_temp_dir() as tmp:
+            vault = self.setup_vault(str(tmp))
             self.assertTrue((vault / "00-inbox").is_dir())
             memory_template = vault / "templates" / "memory.md"
             self.assertTrue(memory_template.is_file())
             self.assertIn("type: memory", memory_template.read_text(encoding="utf-8"))
-            note = Path(tmp) / "note.md"
+            log_template = vault / "templates" / "log.md"
+            self.assertTrue(log_template.is_file())
+            for workspace_dir in ["inbox", "processing", "preview", "exports"]:
+                self.assertTrue((vault / "workspace" / workspace_dir).is_dir())
+                self.assertTrue((vault / "workspace" / workspace_dir / ".gitkeep").exists())
+            self.assertTrue((vault / "workspace" / "README.md").exists())
+            note = tmp / "note.md"
             note.write_text("# Proyecto Memoria\n\nProyecto para normalizar notas.", encoding="utf-8")
             preview = self.run_cli("run", "normalize", "--input", str(note), "--preview", "--json")
             preview_data = json.loads(preview.stdout)
@@ -364,10 +447,10 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertTrue(Path(applied_data["output_path"]).exists())
 
     def test_normalize_write_uses_core_note_template_when_vault_template_is_missing(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            vault = self.setup_vault(tmp)
+        with runtime_temp_dir() as tmp:
+            vault = self.setup_vault(str(tmp))
             (vault / "templates" / "note.md").unlink()
-            note = Path(tmp) / "note.md"
+            note = tmp / "note.md"
             note.write_text("# Nota simple\n\nContenido.", encoding="utf-8")
             result = self.run_cli(
                 "run",
@@ -386,13 +469,13 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertIn("vault/templates/note.md", data["warnings"][0])
 
     def test_normalize_write_prefers_vault_note_template(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            vault = self.setup_vault(tmp)
+        with runtime_temp_dir() as tmp:
+            vault = self.setup_vault(str(tmp))
             (vault / "templates" / "note.md").write_text(
                 "---\ntitle:\ntype: note\nstatus: draft\ncreated:\nupdated:\ntags: []\naliases: []\nsource:\n---\n\n# Título\n\n## Resumen\n\n## Desarrollo\n\n## Relaciones\n\n## Pendientes\n\n## Contexto local\n",
                 encoding="utf-8",
             )
-            note = Path(tmp) / "note.md"
+            note = tmp / "note.md"
             note.write_text("# Nota con template\n\nContenido.", encoding="utf-8")
             result = self.run_cli(
                 "run",
@@ -409,6 +492,76 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertEqual(data["template"]["source"], "vault")
             output = Path(data["output_path"])
             self.assertIn("## Contexto local", output.read_text(encoding="utf-8"))
+
+    def test_preview_to_vault_workspace_and_apply(self) -> None:
+        with runtime_temp_dir() as tmp:
+            vault = self.setup_vault(str(tmp))
+            note = tmp / "note.md"
+            note.write_text("# Decisión visible\n\nSe adopta staging visible en Obsidian.", encoding="utf-8")
+
+            preview = self.run_cli(
+                "run",
+                "normalize",
+                "--input",
+                str(note),
+                "--preview",
+                "--vault-path",
+                str(vault),
+                "--json",
+            )
+            preview_data = json.loads(preview.stdout)
+            preview_output = Path(preview_data["output_path"])
+            self.assertTrue(preview_output.exists())
+            self.assertEqual(preview_output.parent.resolve(), (vault / "workspace" / "preview").resolve())
+
+            applied = self.run_cli(
+                "apply",
+                "--input",
+                str(preview_output),
+                "--vault-path",
+                str(vault),
+                "--json",
+            )
+            applied_data = json.loads(applied.stdout)
+            self.assertTrue(applied_data["ok"])
+            applied_output = Path(applied_data["output_path"])
+            self.assertTrue(applied_output.exists())
+            self.assertEqual(applied_output.parent.resolve(), (vault / "30-resources").resolve())
+
+    def test_preview_uses_env_vault_workspace(self) -> None:
+        with runtime_temp_dir() as tmp:
+            vault = self.setup_vault(str(tmp))
+            note = tmp / "note.md"
+            note.write_text("# Nota visible\n\nContenido para preview visible.", encoding="utf-8")
+
+            preview = self.run_cli(
+                "run",
+                "normalize",
+                "--input",
+                str(note),
+                "--preview",
+                "--json",
+                env={"MI_MEMORIA_VAULT_PATH": str(vault)},
+            )
+            preview_data = json.loads(preview.stdout)
+            preview_output = Path(preview_data["output_path"])
+            self.assertTrue(preview_output.exists())
+            self.assertEqual(preview_output.parent.resolve(), (vault / "workspace" / "preview").resolve())
+
+    def test_ask_uses_env_vault_workspace(self) -> None:
+        with runtime_temp_dir() as tmp:
+            vault = self.setup_vault(str(tmp))
+
+            result = self.run_cli(
+                "ask",
+                "Normaliza esta nota sobre arquitectura",
+                "--json",
+                env={"MI_MEMORIA_VAULT_PATH": str(vault)},
+            )
+            data = json.loads(result.stdout)
+            output = Path(data["output_path"])
+            self.assertTrue(output.exists())
+            self.assertEqual(output.parent.resolve(), (vault / "workspace" / "preview").resolve())
 
 
 if __name__ == "__main__":
