@@ -23,6 +23,7 @@ Activación CLI:
 ./bin/mi-memoria capabilities --json
 ./bin/mi-memoria ask "Normaliza esta nota sobre arquitectura"
 ./bin/mi-memoria run normalize --input note.md --preview
+./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/vault
 ./bin/mi-memoria validate --input note.md
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
 ./bin/mi-memoria remember --summary "..."
@@ -34,9 +35,9 @@ Activación CLI:
 - `normalize`: producir notas Markdown con frontmatter y secciones estándar.
 - `validate`: verificar estructura mínima de notas.
 - `remember`: guardar memoria curada, explícita y resumida.
-- `apply`: copiar previews válidos hacia un vault externo.
-- `ask`: activar normalización simple desde lenguaje natural.
-- `context`: mostrar contexto operacional del runtime.
+- `apply`: copiar previews válidos desde el workspace del runtime o del vault hacia un destino final.
+- `ask`: activar normalización simple desde lenguaje natural; usa `vault/workspace/preview` si hay vault configurado.
+- `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
 - `capabilities`: exponer el contrato operativo actual del CLI.
 
 ## Capacidades planeadas
@@ -52,4 +53,5 @@ Activaciones como `/mi-memoria review-docs`, `/mi-memoria align-readme` o `/mi-m
 - Evitar metadata innecesaria.
 - Priorizar claridad sobre creatividad.
 - No escribir al vault sin una operación explícita.
+- Usar `vault/workspace/preview` como staging visible cuando se indique un vault; no guardar ahí lógica operacional.
 - No presentar capacidades planeadas como disponibles.

@@ -7,6 +7,8 @@
 - Skill `normalize`.
 - Validación Markdown/Obsidian mínima.
 - Workspace transitorio.
+- Workspace curatorial visible dentro del vault para revisión en Obsidian.
+- Temporales de prueba contenidos bajo `runtime/tmp/tests`.
 - Escritura controlada hacia vault externo.
 - Memoria curada local.
 - Setup inicial de vault.

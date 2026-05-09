@@ -15,6 +15,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "workspace"
 PREVIEW_DIR = WORKSPACE / "preview"
+VAULT_WORKSPACE = Path("workspace")
+VAULT_PREVIEW_DIR = VAULT_WORKSPACE / "preview"
 LOG_FILE = ROOT / "logs" / "operations.log"
 
 REQUIRED_FIELDS = ["title", "type", "status", "created", "updated", "tags"]
@@ -44,6 +46,17 @@ def ensure_runtime_dirs() -> None:
         ROOT / "memory" / "history",
         ROOT / "memory" / "conventions",
     ]:
+        path.mkdir(parents=True, exist_ok=True)
+
+
+def ensure_vault_workspace_dirs(vault: Path) -> None:
+    for path in [
+        vault / VAULT_WORKSPACE / "inbox",
+        vault / VAULT_WORKSPACE / "processing",
+        vault / VAULT_PREVIEW_DIR,
+        vault / VAULT_WORKSPACE / "exports",
+    ]:
+        ensure_inside(vault, path)
         path.mkdir(parents=True, exist_ok=True)
 
 
@@ -316,6 +329,13 @@ def resolve_vault_path(vault_path: str | None) -> Path:
     return vault
 
 
+def resolve_optional_vault_path(vault_path: str | None = None) -> Path | None:
+    raw = vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH")
+    if not raw:
+        return None
+    return resolve_vault_path(raw)
+
+
 def ensure_inside(base: Path, target: Path) -> None:
     base_resolved = base.resolve()
     target_resolved = target.resolve()
@@ -351,14 +371,34 @@ def command_explain(args: argparse.Namespace) -> int:
 
 def command_context(args: argparse.Namespace) -> int:
     vault = os.environ.get("MI_MEMORIA_VAULT_PATH", "")
+    vault_workspace = ""
+    if vault:
+        try:
+            vault_workspace = str(resolve_vault_path(vault) / VAULT_WORKSPACE)
+        except ValueError:
+            vault_workspace = ""
     data = {
         "ok": True,
         "runtime": str(ROOT),
         "workspace": str(WORKSPACE),
         "vault": vault,
+        "vault_workspace": vault_workspace,
         "language": os.environ.get("MI_MEMORIA_DEFAULT_LANGUAGE", "es"),
     }
-    emit(data if args.json else {**data, "message": f"Runtime: {ROOT}\nWorkspace: {WORKSPACE}\nVault: {vault or '(no configurado)'}"}, args.json)
+    emit(
+        data
+        if args.json
+        else {
+            **data,
+            "message": (
+                f"Runtime: {ROOT}\n"
+                f"Workspace runtime: {WORKSPACE}\n"
+                f"Vault: {vault or '(no configurado)'}\n"
+                f"Workspace vault: {vault_workspace or '(no configurado)'}"
+            ),
+        },
+        args.json,
+    )
     return 0
 
 
@@ -367,8 +407,13 @@ def command_ask(args: argparse.Namespace) -> int:
     lowered = text.lower()
     if any(term in lowered for term in ["normaliza", "organiza", "clasifica", "nota estructurada", "markdown"]):
         normalized = normalize_markdown(text, "ask")
-        destination = unique_path(PREVIEW_DIR / normalized["filename"])
         ensure_runtime_dirs()
+        vault = resolve_optional_vault_path()
+        if vault:
+            ensure_vault_workspace_dirs(vault)
+            destination = unique_path(vault / VAULT_PREVIEW_DIR / normalized["filename"])
+        else:
+            destination = unique_path(PREVIEW_DIR / normalized["filename"])
         destination.write_text(normalized["content"], encoding="utf-8")
         log_operation("ask.normalize.preview", "inline", str(destination), "ok")
         emit(
@@ -401,7 +446,12 @@ def command_run(args: argparse.Namespace) -> int:
         normalized = normalize_markdown(text, source)
         ensure_runtime_dirs()
         if args.preview:
-            output = unique_path(PREVIEW_DIR / normalized["filename"])
+            vault = resolve_optional_vault_path(args.vault_path)
+            if vault:
+                ensure_vault_workspace_dirs(vault)
+                output = unique_path(vault / VAULT_PREVIEW_DIR / normalized["filename"])
+            else:
+                output = unique_path(PREVIEW_DIR / normalized["filename"])
             proposed = Path(normalized["classification"]) / normalized["filename"]
             mode = "preview"
         else:
@@ -491,12 +541,15 @@ def command_remember(args: argparse.Namespace) -> int:
 def command_apply(args: argparse.Namespace) -> int:
     try:
         source = Path(args.input).resolve()
+        vault = resolve_vault_path(args.vault_path)
         preview_root = PREVIEW_DIR.resolve()
-        if preview_root != source and preview_root not in source.parents:
-            raise ValueError("apply solo acepta archivos dentro de workspace/preview.")
+        vault_preview_root = (vault / VAULT_PREVIEW_DIR).resolve()
+        source_in_runtime_preview = preview_root == source or preview_root in source.parents
+        source_in_vault_preview = vault_preview_root == source or vault_preview_root in source.parents
+        if not source_in_runtime_preview and not source_in_vault_preview:
+            raise ValueError("apply solo acepta archivos dentro de workspace/preview del runtime o del vault.")
         if source.suffix != ".md" or not source.is_file():
             raise ValueError("El input de apply debe ser un archivo Markdown existente.")
-        vault = resolve_vault_path(args.vault_path)
         text = source.read_text(encoding="utf-8")
         validation = validate_text(text, source.name)
         if not validation["ok"]:

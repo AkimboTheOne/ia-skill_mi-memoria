@@ -231,11 +231,11 @@ mi-memoria remember --summary "..."
 
 ---
 
-# 6. Workspace Operacional
+# 6. Workspaces Operacionales
 
 ## 6.1 Objetivo
 
-El runtime debe operar inicialmente sobre un workspace transitorio.
+El runtime debe operar inicialmente sobre un workspace transitorio propio y puede proyectar previews a un workspace curatorial visible dentro del vault cuando exista una ruta de vault explícita.
 
 Esto evita:
 
@@ -246,7 +246,7 @@ Esto evita:
 
 ---
 
-## 6.2 Estructura mínima
+## 6.2 Workspace técnico del runtime
 
 ```text
 workspace/
@@ -256,9 +256,26 @@ workspace/
   exports/
 ```
 
+Este workspace pertenece al repositorio runtime y puede contener temporales técnicos.
+
 ---
 
-## 6.3 Flujo operacional
+## 6.3 Workspace curatorial del vault
+
+```text
+mi-memoria-vault/
+  workspace/
+    inbox/
+    processing/
+    preview/
+    exports/
+```
+
+Este workspace es visible desde Obsidian para revisar, editar puntualmente y reubicar ideas. No debe contener scripts, logs, dependencias ni lógica operacional del runtime.
+
+---
+
+## 6.4 Flujo operacional
 
 ### Captura
 
@@ -266,6 +283,12 @@ Las notas ingresan inicialmente a:
 
 ```text
 workspace/inbox/
+```
+
+Con vault configurado, los previews pueden ingresar a:
+
+```text
+mi-memoria-vault/workspace/preview/
 ```
 
 ---
@@ -294,7 +317,7 @@ Ejemplo:
 
 ---
 
-## 6.4 Integridad obligatoria
+## 6.5 Integridad obligatoria
 
 Todo movimiento debe:
 
@@ -304,6 +327,8 @@ Todo movimiento debe:
 - registrar destino;
 - registrar resultado;
 - evitar sobrescrituras silenciosas.
+
+Los temporales controlados por el runtime deben permanecer bajo `tmp/` o `workspace/` del runtime. Esto reduce dependencia de configuraciones del anfitrión y evita conflictos con rutas temporales del sistema.
 
 ---
 
@@ -410,6 +435,12 @@ mi-memoria-vault/
 ├── assets/
 ├── templates/
 ├── indexes/
+
+├── workspace/
+│   ├── inbox/
+│   ├── processing/
+│   ├── preview/
+│   └── exports/
 
 └── memory/
 ```
