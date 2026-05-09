@@ -4,7 +4,11 @@ import json
 import subprocess
 import tempfile
 import unittest
+from argparse import Namespace
 from pathlib import Path
+from unittest.mock import patch
+
+from cli import main as cli_main
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +33,66 @@ class MiMemoriaCliTests(unittest.TestCase):
         data = json.loads(result.stdout)
         self.assertTrue(data["ok"])
         self.assertIn("normalize", data["skills"])
+        self.assertIn("upgrade", data["commands"])
+
+    def test_upgrade_invokes_scoped_git_pull(self) -> None:
+        calls: list[list[str]] = []
+
+        def fake_git(args: list[str]) -> subprocess.CompletedProcess[str]:
+            calls.append(args)
+            return subprocess.CompletedProcess(args, 0, "ok\n", "")
+
+        with patch.object(cli_main, "run_git_command", side_effect=fake_git), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[0], ["git", "-C", str(cli_main.ROOT), "rev-parse", "--git-dir"])
+        self.assertEqual(calls[1], ["git", "-C", str(cli_main.ROOT), "remote", "get-url", "origin"])
+        self.assertEqual(calls[2], ["git", "-C", str(cli_main.ROOT), "pull", "--ff-only"])
+        data = json.loads(printed.call_args.args[0])
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["command"], "upgrade")
+
+    def test_upgrade_reports_git_pull_error(self) -> None:
+        def fake_git(args: list[str]) -> subprocess.CompletedProcess[str]:
+            if args[-1] == "--git-dir":
+                return subprocess.CompletedProcess(args, 0, ".git\n", "")
+            if args[-2:] == ["get-url", "origin"]:
+                return subprocess.CompletedProcess(args, 0, "git@example.com:repo.git\n", "")
+            return subprocess.CompletedProcess(args, 1, "", "fatal: Not possible to fast-forward\n")
+
+        with patch.object(cli_main, "run_git_command", side_effect=fake_git), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 1)
+        data = json.loads(printed.call_args.args[0])
+        self.assertFalse(data["ok"])
+        self.assertEqual(data["returncode"], 1)
+        self.assertIn("fast-forward", data["stderr"])
+
+    def test_upgrade_reports_missing_origin_remote(self) -> None:
+        def fake_git(args: list[str]) -> subprocess.CompletedProcess[str]:
+            if args[-1] == "--git-dir":
+                return subprocess.CompletedProcess(args, 0, ".git\n", "")
+            return subprocess.CompletedProcess(args, 2, "", "error: No such remote 'origin'\n")
+
+        with patch.object(cli_main, "run_git_command", side_effect=fake_git), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 2)
+        data = json.loads(printed.call_args.args[0])
+        self.assertFalse(data["ok"])
+        self.assertIn("remoto origin", data["message"])
+
+    def test_upgrade_reports_non_git_runtime(self) -> None:
+        result = subprocess.CompletedProcess(["git"], 128, "", "fatal: not a git repository\n")
+        with patch.object(cli_main, "run_git_command", return_value=result), patch("builtins.print") as printed:
+            code = cli_main.command_upgrade(Namespace(json=True))
+
+        self.assertEqual(code, 2)
+        data = json.loads(printed.call_args.args[0])
+        self.assertFalse(data["ok"])
+        self.assertIn("repositorio Git", data["message"])
 
     def test_normalize_preview_and_validate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
