@@ -7,6 +7,9 @@ if [ "$#" -ne 1 ]; then
 fi
 
 VAULT="$1"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CORE_TEMPLATES="$ROOT/skills/core/templates"
 
 if [ -e "$VAULT" ] && [ ! -d "$VAULT" ]; then
   echo "La ruta existe y no es un directorio: $VAULT" >&2
@@ -60,26 +63,22 @@ create_if_missing() {
   fi
 }
 
-create_if_missing "$VAULT/templates/note.md" "---
-title:
-type: note
-status: draft
-created:
-updated:
-tags: []
-aliases: []
-source:
----
+copy_template_if_missing() {
+  local name="$1"
+  local source="$CORE_TEMPLATES/$name.md"
+  local destination="$VAULT/templates/$name.md"
+  if [ ! -f "$source" ]; then
+    echo "Plantilla CORE faltante: $source" >&2
+    exit 2
+  fi
+  if [ ! -e "$destination" ]; then
+    cp "$source" "$destination"
+  fi
+}
 
-# Título
-
-## Resumen
-
-## Desarrollo
-
-## Relaciones
-
-## Pendientes"
+copy_template_if_missing "note"
+copy_template_if_missing "memory"
+copy_template_if_missing "log"
 
 create_if_missing "$VAULT/indexes/README.md" "# Índices
 

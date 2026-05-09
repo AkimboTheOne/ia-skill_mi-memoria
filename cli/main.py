@@ -16,15 +16,24 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "workspace"
 PREVIEW_DIR = WORKSPACE / "preview"
+TEMPLATE_PREVIEW_DIR = PREVIEW_DIR / "templates"
 VAULT_WORKSPACE = Path("workspace")
 VAULT_PREVIEW_DIR = VAULT_WORKSPACE / "preview"
 LOG_FILE = ROOT / "logs" / "operations.log"
+CORE_TEMPLATE_DIR = ROOT / "skills" / "core" / "templates"
 
 REQUIRED_FIELDS = ["title", "type", "status", "created", "updated", "tags"]
-VALID_TYPES = ["note", "decision", "project", "resource", "area"]
+VALID_TYPES = ["note", "decision", "project", "resource", "area", "memory"]
 VALID_STATUSES = ["draft", "review", "active", "archived"]
 VALID_DESTINATIONS = ["00-inbox", "10-areas", "20-projects", "30-resources", "40-archive"]
 STANDARD_SECTIONS = ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
+
+
+def core_template_warning(note_type: str) -> str:
+    return (
+        f"No existe vault/templates/{note_type}.md; se usó la plantilla CORE por defecto. "
+        "Ejecuta scripts/skill_setup.sh para restaurar plantillas base o crea tu propia plantilla en el vault."
+    )
 
 
 def now_date() -> str:
@@ -40,6 +49,7 @@ def ensure_runtime_dirs() -> None:
         WORKSPACE / "inbox",
         WORKSPACE / "processing",
         PREVIEW_DIR,
+        TEMPLATE_PREVIEW_DIR,
         WORKSPACE / "exports",
         ROOT / "logs",
         ROOT / "tmp",
@@ -48,6 +58,38 @@ def ensure_runtime_dirs() -> None:
         ROOT / "memory" / "conventions",
     ]:
         path.mkdir(parents=True, exist_ok=True)
+
+
+def resolve_template(note_type: str, vault: Path | None = None) -> dict[str, Any]:
+    filename = f"{note_type}.md"
+    if vault:
+        vault_template = vault / "templates" / filename
+        if vault_template.is_file():
+            return {
+                "source": "vault",
+                "path": str(vault_template),
+                "content": vault_template.read_text(encoding="utf-8"),
+                "warnings": [],
+            }
+    core_template = CORE_TEMPLATE_DIR / filename
+    if core_template.is_file():
+        warnings = [core_template_warning(note_type)] if vault else []
+        return {
+            "source": "core",
+            "path": str(core_template),
+            "content": core_template.read_text(encoding="utf-8"),
+            "warnings": warnings,
+        }
+    raise ValueError(f"Plantilla CORE no disponible para tipo: {note_type}")
+
+
+def list_template_files(path: Path) -> list[dict[str, str]]:
+    if not path.is_dir():
+        return []
+    templates: list[dict[str, str]] = []
+    for template in sorted(path.glob("*.md")):
+        templates.append({"name": template.stem, "path": str(template)})
+    return templates
 
 
 def ensure_vault_workspace_dirs(vault: Path) -> None:
@@ -218,10 +260,33 @@ def build_frontmatter(metadata: dict[str, Any]) -> str:
     )
 
 
-def normalize_markdown(text: str, source: str) -> dict[str, Any]:
+def render_template(content: str, metadata: dict[str, Any], sections: dict[str, str]) -> str:
+    body = strip_existing_frontmatter(content)
+    frontmatter = build_frontmatter(metadata)
+    title = metadata["title"]
+    lines = body.splitlines()
+    for index, line in enumerate(lines):
+        if re.match(r"^#\s+", line):
+            lines[index] = f"# {title}"
+            break
+    else:
+        lines.insert(0, f"# {title}")
+    rendered_body = "\n".join(lines).strip()
+    for section, value in sections.items():
+        replacement = f"## {section}\n\n{value.strip()}"
+        pattern = re.compile(rf"## {re.escape(section)}(?:\n.*?)(?=\n## |\Z)", re.DOTALL)
+        if pattern.search(rendered_body):
+            rendered_body = pattern.sub(replacement, rendered_body)
+        else:
+            rendered_body = f"{rendered_body}\n\n{replacement}".strip()
+    return f"{frontmatter}\n\n{rendered_body}\n"
+
+
+def normalize_markdown(text: str, source: str, vault: Path | None = None) -> dict[str, Any]:
     body = strip_existing_frontmatter(text)
     title = extract_title(body)
     note_type = infer_type(body, title)
+    template = resolve_template(note_type if note_type in {"note", "memory"} else "note", vault)
     destination = classify(note_type, body)
     date = now_date()
     filename = f"{date}-{slugify(title)}.md"
@@ -237,15 +302,15 @@ def normalize_markdown(text: str, source: str) -> dict[str, Any]:
         "source": source,
     }
     relation_lines = "\n".join(f"- [[{link}]]" for link in links) if links else "- Sin relaciones sugeridas."
-    normalized = "\n\n".join(
-        [
-            build_frontmatter(metadata),
-            f"# {title}",
-            "## Resumen\n\n" + summarize(body),
-            "## Desarrollo\n\n" + (body or "Contenido pendiente."),
-            "## Relaciones\n\n" + relation_lines,
-            "## Pendientes\n\n- Revisar y consolidar esta nota antes de moverla a estado activo.",
-        ]
+    normalized = render_template(
+        template["content"],
+        metadata,
+        {
+            "Resumen": summarize(body),
+            "Desarrollo": body or "Contenido pendiente.",
+            "Relaciones": relation_lines,
+            "Pendientes": "- Revisar y consolidar esta nota antes de moverla a estado activo.",
+        },
     )
     validation = validate_text(normalized, filename)
     return {
@@ -254,6 +319,12 @@ def normalize_markdown(text: str, source: str) -> dict[str, Any]:
         "classification": destination,
         "metadata": metadata,
         "wikilinks": links,
+        "template": {
+            "type": note_type if note_type in {"note", "memory"} else "note",
+            "source": template["source"],
+            "path": template["path"],
+        },
+        "warnings": template["warnings"],
         "validation": validation,
     }
 
@@ -288,9 +359,13 @@ def validate_text(text: str, filename: str | None = None) -> dict[str, Any]:
         errors.append(f"Estado inválido: {status}")
     if "tags" in frontmatter and not frontmatter["tags"].startswith("["):
         warnings.append("tags debería declararse como lista YAML inline.")
-    for section in STANDARD_SECTIONS:
-        if f"## {section}" not in text:
-            errors.append(f"Falta sección requerida: {section}")
+    if note_type == "memory":
+        if "## Memoria" not in text:
+            errors.append("Falta sección requerida: Memoria")
+    else:
+        for section in STANDARD_SECTIONS:
+            if f"## {section}" not in text:
+                errors.append(f"Falta sección requerida: {section}")
     if filename and not re.match(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$", Path(filename).name):
         errors.append("Nombre de archivo no cumple yyyy-mm-dd-slug.md")
     return {
@@ -300,8 +375,150 @@ def validate_text(text: str, filename: str | None = None) -> dict[str, Any]:
         "checks": {
             "frontmatter": bool(frontmatter),
             "required_fields": all(frontmatter.get(field) for field in REQUIRED_FIELDS),
-            "sections": all(f"## {section}" in text for section in STANDARD_SECTIONS),
+            "sections": "## Memoria" in text
+            if note_type == "memory"
+            else all(f"## {section}" in text for section in STANDARD_SECTIONS),
             "filename": filename is None or not any("Nombre de archivo" in error for error in errors),
+        },
+    }
+
+
+def parse_template_context(text: str, source_name: str = "") -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "title": "",
+        "type": "",
+        "status": "",
+        "tags": [],
+        "sections": [],
+    }
+    if source_name.endswith((".yaml", ".yml")):
+        current_list: str | None = None
+        for raw_line in text.splitlines():
+            line = raw_line.rstrip()
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if stripped.startswith("- ") and current_list:
+                data[current_list].append(clean_inline(stripped[2:]))
+                continue
+            if ":" in stripped:
+                key, value = stripped.split(":", 1)
+                key = key.strip().lower()
+                value = value.strip().strip("\"'")
+                if key in {"title", "type", "status"}:
+                    data[key] = value
+                    current_list = None
+                elif key in {"tags", "sections"}:
+                    current_list = key
+                    if value.startswith("[") and value.endswith("]"):
+                        data[key] = [
+                            clean_inline(item.strip().strip("\"'"))
+                            for item in value[1:-1].split(",")
+                            if clean_inline(item.strip().strip("\"'"))
+                        ]
+                        current_list = None
+                    elif value:
+                        data[key] = [clean_inline(value)]
+        return data
+
+    frontmatter = parse_frontmatter(text)
+    data["title"] = frontmatter.get("title", "").strip('"')
+    data["type"] = frontmatter.get("type", "")
+    data["status"] = frontmatter.get("status", "")
+    tags = frontmatter.get("tags", "")
+    if tags.startswith("[") and tags.endswith("]"):
+        data["tags"] = [
+            clean_inline(item.strip().strip("\"'"))
+            for item in tags[1:-1].split(",")
+            if clean_inline(item.strip().strip("\"'"))
+        ]
+    sections = re.findall(r"^##\s+(.+)$", strip_existing_frontmatter(text), flags=re.MULTILINE)
+    data["sections"] = [clean_inline(section) for section in sections if clean_inline(section)]
+    if not data["title"]:
+        data["title"] = extract_title(strip_existing_frontmatter(text))
+    return data
+
+
+def sections_from_description(description: str) -> list[str]:
+    lowered = description.lower()
+    if any(term in lowered for term in ["log", "registro", "cronolog", "evento"]):
+        return ["Registro", "Observaciones"]
+    if any(term in lowered for term in ["cliente", "crm", "venta", "comercial"]):
+        return ["Resumen", "Datos clave", "Interacciones", "Pendientes"]
+    if any(term in lowered for term in ["proyecto", "roadmap"]):
+        return ["Resumen", "Objetivos", "Avance", "Riesgos", "Pendientes"]
+    return ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
+
+
+def build_template_content(
+    name: str,
+    note_type: str,
+    input_text: str | None = None,
+    input_name: str = "",
+    description: str | None = None,
+) -> dict[str, Any]:
+    context = parse_template_context(input_text, input_name) if input_text is not None else {}
+    title = clean_inline(str(context.get("title") or name.replace("-", " ").title()))
+    resolved_type = clean_inline(str(context.get("type") or note_type))
+    status = clean_inline(str(context.get("status") or ("active" if name == "log" else "draft")))
+    tags = context.get("tags") or ["mi-memoria", slugify(name)]
+    sections = context.get("sections") or sections_from_description(description or name)
+    if description and input_text is not None and "Contexto" not in sections:
+        sections = [*sections, "Contexto"]
+    metadata = {
+        "title": title,
+        "type": resolved_type,
+        "status": status,
+        "created": "",
+        "updated": "",
+        "tags": tags,
+        "aliases": [],
+        "source": "template.generate",
+    }
+    body_lines = [f"# {title}", ""]
+    for section in sections:
+        body_lines.extend([f"## {section}", ""])
+        if section == "Contexto" and description:
+            body_lines.extend([description.strip(), ""])
+    content = build_frontmatter(metadata) + "\n\n" + "\n".join(body_lines).rstrip() + "\n"
+    validation = validate_template_text(content, f"{slugify(name)}.md")
+    return {
+        "content": content,
+        "template": {"name": slugify(name), "type": resolved_type, "source": "generated"},
+        "warnings": [],
+        "validation": validation,
+    }
+
+
+def validate_template_text(text: str, filename: str | None = None) -> dict[str, Any]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    frontmatter = parse_frontmatter(text)
+    for field in REQUIRED_FIELDS:
+        if field not in frontmatter:
+            errors.append(f"Falta frontmatter requerido: {field}")
+    note_type = frontmatter.get("type", "")
+    status = frontmatter.get("status", "")
+    if note_type and note_type not in VALID_TYPES:
+        errors.append(f"Tipo inválido: {note_type}")
+    if status and status not in VALID_STATUSES:
+        errors.append(f"Estado inválido: {status}")
+    sections = re.findall(r"^##\s+.+$", strip_existing_frontmatter(text), flags=re.MULTILINE)
+    if not sections:
+        errors.append("Falta al menos una sección de template.")
+    if filename and not re.match(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.md$", Path(filename).name):
+        errors.append("Nombre de template no cumple slug.md")
+    if "tags" in frontmatter and frontmatter["tags"] and not frontmatter["tags"].startswith("["):
+        warnings.append("tags debería declararse como lista YAML inline.")
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "warnings": warnings,
+        "checks": {
+            "frontmatter": bool(frontmatter),
+            "required_fields": all(field in frontmatter for field in REQUIRED_FIELDS),
+            "sections": bool(sections),
+            "filename": filename is None or not any("Nombre de template" in error for error in errors),
         },
     }
 
@@ -419,7 +636,18 @@ def command_capabilities(args: argparse.Namespace) -> int:
         "name": "mi-memoria",
         "version": "0.1.0",
         "skills": ["normalize"],
-        "commands": ["ask", "explain", "context", "capabilities", "run normalize", "validate", "remember", "apply", "upgrade"],
+        "commands": [
+            "ask",
+            "explain",
+            "context",
+            "capabilities",
+            "run normalize",
+            "validate",
+            "remember",
+            "apply",
+            "template",
+            "upgrade",
+        ],
         "types": VALID_TYPES,
         "statuses": VALID_STATUSES,
         "destinations": VALID_DESTINATIONS,
@@ -512,11 +740,11 @@ def command_run(args: argparse.Namespace) -> int:
         emit({"ok": False, "message": "Debes usar --preview o --write.", "errors": ["Modo de escritura no especificado."]}, args.json)
         return 2
     try:
-        text, source = read_text_input(args.input)
-        normalized = normalize_markdown(text, source)
         ensure_runtime_dirs()
         if args.preview:
+            text, source = read_text_input(args.input)
             vault = resolve_optional_vault_path(args.vault_path)
+            normalized = normalize_markdown(text, source, vault)
             if vault:
                 ensure_vault_workspace_dirs(vault)
                 output = unique_path(vault / VAULT_PREVIEW_DIR / normalized["filename"])
@@ -526,6 +754,8 @@ def command_run(args: argparse.Namespace) -> int:
             mode = "preview"
         else:
             vault = resolve_vault_path(args.vault_path)
+            text, source = read_text_input(args.input)
+            normalized = normalize_markdown(text, source, vault)
             output = unique_path(vault / normalized["classification"] / normalized["filename"])
             ensure_inside(vault, output)
             output.parent.mkdir(parents=True, exist_ok=True)
@@ -542,7 +772,8 @@ def command_run(args: argparse.Namespace) -> int:
             "proposed_vault_path": str(proposed),
             "filename": normalized["filename"],
             "classification": normalized["classification"],
-            "warnings": normalized["validation"]["warnings"],
+            "template": normalized["template"],
+            "warnings": normalized["warnings"] + normalized["validation"]["warnings"],
             "validation": normalized["validation"],
             "message": f"{mode.capitalize()} generado: {output}",
         }
@@ -573,39 +804,210 @@ def command_validate(args: argparse.Namespace) -> int:
         return 2
 
 
+def command_template_list(args: argparse.Namespace) -> int:
+    vault = resolve_vault_path(args.vault_path) if args.vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH") else None
+    core = list_template_files(CORE_TEMPLATE_DIR)
+    vault_templates = list_template_files(vault / "templates") if vault else []
+    emit(
+        {
+            "ok": True,
+            "command": "template list",
+            "core": core,
+            "vault": vault_templates,
+            "message": f"Templates CORE: {len(core)}; vault: {len(vault_templates)}",
+        },
+        args.json,
+    )
+    return 0
+
+
+def command_template_show(args: argparse.Namespace) -> int:
+    try:
+        vault = resolve_vault_path(args.vault_path) if args.vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH") else None
+        template = resolve_template(args.name, vault)
+        emit(
+            {
+                "ok": True,
+                "command": "template show",
+                "template": {
+                    "name": args.name,
+                    "source": template["source"],
+                    "path": template["path"],
+                },
+                "content": template["content"],
+                "warnings": template["warnings"],
+                "message": f"Template efectivo: {template['path']}",
+            },
+            args.json,
+        )
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
+
+
+def command_template_generate(args: argparse.Namespace) -> int:
+    if not args.preview:
+        emit({"ok": False, "message": "template generate requiere --preview.", "errors": ["Modo preview requerido."]}, args.json)
+        return 2
+    try:
+        input_text = None
+        input_name = ""
+        if args.input:
+            input_path = Path(args.input)
+            input_text = input_path.read_text(encoding="utf-8")
+            input_name = input_path.name
+        generated = build_template_content(args.name, args.type, input_text, input_name, args.description)
+        ensure_runtime_dirs()
+        output = unique_path(TEMPLATE_PREVIEW_DIR / f"{slugify(args.name)}.md")
+        output.write_text(generated["content"], encoding="utf-8")
+        log_operation("template.generate.preview", args.input or "inline", str(output), "ok")
+        emit(
+            {
+                "ok": True,
+                "command": "template generate",
+                "mode": "preview",
+                "output_path": str(output),
+                "template": generated["template"],
+                "warnings": generated["warnings"] + generated["validation"]["warnings"],
+                "validation": generated["validation"],
+                "message": f"Preview de template generado: {output}",
+            },
+            args.json,
+        )
+        return 0 if generated["validation"]["ok"] else 1
+    except Exception as exc:
+        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
+
+
+def command_template_validate(args: argparse.Namespace) -> int:
+    try:
+        path = Path(args.input)
+        result = validate_template_text(path.read_text(encoding="utf-8"), path.name)
+        emit(
+            {
+                "ok": result["ok"],
+                "command": "template validate",
+                "input": str(path),
+                "errors": result["errors"],
+                "warnings": result["warnings"],
+                "checks": result["checks"],
+                "message": "Template válido." if result["ok"] else "Template inválido.",
+            },
+            args.json,
+        )
+        return 0 if result["ok"] else 1
+    except Exception as exc:
+        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
+
+
+def command_template_apply(args: argparse.Namespace) -> int:
+    try:
+        source = Path(args.input).resolve()
+        preview_root = TEMPLATE_PREVIEW_DIR.resolve()
+        if preview_root != source and preview_root not in source.parents:
+            raise ValueError("template apply solo acepta archivos dentro de workspace/preview/templates.")
+        if source.suffix != ".md" or not source.is_file():
+            raise ValueError("El input de template apply debe ser un archivo Markdown existente.")
+        text = source.read_text(encoding="utf-8")
+        validation = validate_template_text(text, source.name)
+        if not validation["ok"]:
+            emit(
+                {
+                    "ok": False,
+                    "command": "template apply",
+                    "input": str(source),
+                    "errors": validation["errors"],
+                    "warnings": validation["warnings"],
+                    "checks": validation["checks"],
+                    "message": "No se aplicó porque el template no valida.",
+                },
+                args.json,
+            )
+            return 1
+        vault = resolve_vault_path(args.vault_path)
+        destination = vault / "templates" / source.name
+        ensure_inside(vault, destination)
+        if destination.exists():
+            raise ValueError(f"Template ya existe y no se sobrescribe: {destination}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        log_operation("template.apply", str(source), str(destination), "ok")
+        emit(
+            {
+                "ok": True,
+                "command": "template apply",
+                "input": str(source),
+                "output_path": str(destination),
+                "validation": validation,
+                "message": f"Template aplicado al vault: {destination}",
+            },
+            args.json,
+        )
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "template apply", "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
+
+
 def command_remember(args: argparse.Namespace) -> int:
     summary = clean_inline(args.summary)
     if not summary:
         emit({"ok": False, "message": "La memoria requiere --summary no vacío.", "errors": ["summary vacío"]}, args.json)
         return 2
-    ensure_runtime_dirs()
-    title = summary[:60]
-    filename = f"{now_date()}-{slugify(title)}.md"
-    output = unique_path(ROOT / "memory" / "hot" / filename)
-    content = "\n".join(
-        [
-            "---",
-            f'title: {json.dumps(title, ensure_ascii=False)}',
-            "type: memory",
-            "status: active",
-            f"created: {now_date()}",
-            f"updated: {now_date()}",
-            'tags: ["mi-memoria", "memory"]',
-            "source: remember",
-            "---",
-            "",
-            f"# {title}",
-            "",
-            "## Memoria",
-            "",
-            summary,
-            "",
-        ]
-    )
-    output.write_text(content, encoding="utf-8")
-    log_operation("remember", "summary", str(output), "ok")
-    emit({"ok": True, "output_path": str(output), "message": f"Memoria guardada: {output}"}, args.json)
-    return 0
+    try:
+        ensure_runtime_dirs()
+        title = summary[:60]
+        filename = f"{now_date()}-{slugify(title)}.md"
+        if args.scope == "runtime":
+            template = resolve_template("memory")
+            output = unique_path(ROOT / "memory" / "hot" / filename)
+        else:
+            vault = resolve_vault_path(args.vault_path)
+            template = resolve_template("memory", vault)
+            output = unique_path(vault / "memory" / filename)
+            ensure_inside(vault, output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+        metadata = {
+            "title": title,
+            "type": "memory",
+            "status": "active",
+            "created": now_date(),
+            "updated": now_date(),
+            "tags": ["mi-memoria", "memory"],
+            "aliases": [],
+            "source": "remember",
+        }
+        content = render_template(
+            template["content"],
+            metadata,
+            {
+                "Memoria": summary,
+            },
+        )
+        output.write_text(content, encoding="utf-8")
+        log_operation(f"remember.{args.scope}", "summary", str(output), "ok")
+        emit(
+            {
+                "ok": True,
+                "scope": args.scope,
+                "output_path": str(output),
+                "template": {
+                    "type": "memory",
+                    "source": template["source"],
+                    "path": template["path"],
+                },
+                "warnings": template["warnings"],
+                "message": f"Memoria guardada: {output}",
+            },
+            args.json,
+        )
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "scope": args.scope, "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
 
 
 def command_apply(args: argparse.Namespace) -> int:
@@ -698,8 +1100,44 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--json", action="store_true")
     validate.set_defaults(func=command_validate)
 
+    template = sub.add_parser("template")
+    template_sub = template.add_subparsers(dest="template_command", required=True)
+
+    template_list = template_sub.add_parser("list")
+    template_list.add_argument("--vault-path")
+    template_list.add_argument("--json", action="store_true")
+    template_list.set_defaults(func=command_template_list)
+
+    template_show = template_sub.add_parser("show")
+    template_show.add_argument("--name", required=True)
+    template_show.add_argument("--vault-path")
+    template_show.add_argument("--json", action="store_true")
+    template_show.set_defaults(func=command_template_show)
+
+    template_generate = template_sub.add_parser("generate")
+    template_generate.add_argument("--name", required=True)
+    template_generate.add_argument("--type", choices=VALID_TYPES, default="note")
+    template_generate.add_argument("--input")
+    template_generate.add_argument("--description")
+    template_generate.add_argument("--preview", action="store_true")
+    template_generate.add_argument("--json", action="store_true")
+    template_generate.set_defaults(func=command_template_generate)
+
+    template_validate = template_sub.add_parser("validate")
+    template_validate.add_argument("--input", required=True)
+    template_validate.add_argument("--json", action="store_true")
+    template_validate.set_defaults(func=command_template_validate)
+
+    template_apply = template_sub.add_parser("apply")
+    template_apply.add_argument("--input", required=True)
+    template_apply.add_argument("--vault-path")
+    template_apply.add_argument("--json", action="store_true")
+    template_apply.set_defaults(func=command_template_apply)
+
     remember = sub.add_parser("remember")
     remember.add_argument("--summary", required=True)
+    remember.add_argument("--scope", choices=["vault", "runtime"], default="vault")
+    remember.add_argument("--vault-path")
     remember.add_argument("--json", action="store_true")
     remember.set_defaults(func=command_remember)
 

@@ -11,5 +11,5 @@
 - Temporales de prueba contenidos bajo `runtime/tmp/tests`.
 - Alias corto de activación `/mem` para el runtime `mi-memoria`.
 - Escritura controlada hacia vault externo.
-- Memoria curada local.
+- Memoria curada en vault por defecto; memoria local del runtime solo con `--scope runtime`.
 - Setup inicial de vault.

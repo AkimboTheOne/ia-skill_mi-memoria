@@ -9,7 +9,8 @@ Runtime local de skills para operar sobre repositorios de conocimiento Markdown,
 - Validación de estructura, frontmatter, nombres y secciones mínimas.
 - Workspace técnico del runtime y workspace curatorial visible dentro del vault.
 - Escritura controlada hacia un vault externo.
-- Memoria operacional curada mediante `remember`.
+- Memoria curada del proyecto en el vault mediante `remember`.
+- Generación determinista de plantillas mediante `template`.
 - Setup inicial de vault mediante `scripts/skill_setup.sh`.
 - Actualización segura del runtime mediante `upgrade`.
 
@@ -59,7 +60,8 @@ En v0.1 el runtime expone:
 
 - `normalize`: normaliza Markdown libre hacia una nota Obsidian consistente.
 - `validate`: valida frontmatter, secciones mínimas y nombre de archivo.
-- `remember`: registra memoria operacional curada y resumida.
+- `remember`: registra memoria curada y resumida en `memory/` del vault por defecto.
+- `template`: lista, muestra, genera, valida y aplica plantillas Markdown.
 - `apply`: aplica un preview validado desde el workspace del runtime o del vault hacia un destino final del vault.
 - `ask`: detecta intenciones simples de normalización desde lenguaje natural.
 - `context`: reporta runtime, workspace técnico, vault configurado, workspace visible e idioma.
@@ -79,8 +81,9 @@ El objetivo futuro es generar planes o reportes de alineación documental que di
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/mi-memoria-vault
 ./bin/mi-memoria validate --input workspace/preview/2026-05-08-nota.md
+./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview
 ./bin/mi-memoria apply --input workspace/preview/2026-05-08-nota.md --vault-path /path/to/mi-memoria-vault
-./bin/mi-memoria remember --summary "Se adopta Python estándar para v0.1."
+./bin/mi-memoria remember --summary "Se adopta Python estándar para v0.1." --vault-path /path/to/mi-memoria-vault
 ./bin/mi-memoria upgrade --json
 ```
 
@@ -90,13 +93,23 @@ También puede configurarse el vault por entorno:
 export MI_MEMORIA_VAULT_PATH=/path/to/mi-memoria-vault
 ```
 
+Con el vault configurado, `remember` escribe por defecto en `memory/` del vault. La memoria interna del runtime solo debe usarse para comportamiento operacional del skill:
+
+```bash
+./bin/mi-memoria remember --summary "Convención interna del skill." --scope runtime
+```
+
+Las plantillas del vault tienen prioridad. Si falta una plantilla primitiva del vault, el runtime usa la plantilla CORE de `skills/core/templates` y emite un warning recomendando restaurarla con `scripts/skill_setup.sh` o crear una plantilla propia.
+
+`template generate` crea previews en `workspace/preview/templates`. `template apply` copia esos previews a `vault/templates` solo si el destino no existe.
+
 ## Inicializar un vault
 
 ```bash
 ./scripts/skill_setup.sh /path/to/mi-memoria-vault
 ```
 
-El script crea la estructura mínima sin sobrescribir archivos existentes.
+El script crea la estructura mínima y copia las plantillas CORE `note`, `memory` y `log` sin sobrescribir archivos existentes. Puede volver a ejecutarse sobre un vault existente para agregar plantillas faltantes.
 
 El vault incluye un `workspace/` visible desde Obsidian con `inbox`, `processing`, `preview` y `exports`. Esa zona es para curaduría y edición puntual; no contiene scripts, logs, dependencias ni lógica operacional del runtime.
 

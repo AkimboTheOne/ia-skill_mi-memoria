@@ -30,8 +30,10 @@ Activación CLI:
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/vault
 ./bin/mi-memoria validate --input note.md
+./bin/mi-memoria template list --json
+./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
-./bin/mi-memoria remember --summary "..."
+./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
 ./bin/mi-memoria context --json
 ./bin/mi-memoria upgrade --json
 ```
@@ -40,7 +42,8 @@ Activación CLI:
 
 - `normalize`: producir notas Markdown con frontmatter y secciones estándar.
 - `validate`: verificar estructura mínima de notas.
-- `remember`: guardar memoria curada, explícita y resumida.
+- `remember`: guardar memoria curada, explícita y resumida en el vault por defecto.
+- `template`: listar, revisar, generar, validar y aplicar plantillas Markdown.
 - `apply`: copiar previews válidos desde el workspace del runtime o del vault hacia un destino final.
 - `ask`: activar normalización simple desde lenguaje natural; usa `vault/workspace/preview` si hay vault configurado.
 - `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
@@ -57,9 +60,12 @@ Activaciones como `/mi-memoria review-docs`, `/mem review-docs`, `/mi-memoria al
 
 - Producir Markdown válido.
 - Mantener frontmatter consistente.
+- Priorizar plantillas del vault y usar plantillas CORE solo como fallback con warning.
 - Evitar metadata innecesaria.
 - Priorizar claridad sobre creatividad.
 - No escribir al vault sin una operación explícita.
+- Usar `remember --scope runtime` solo para memoria operacional del skill.
 - Usar `vault/workspace/preview` como staging visible cuando se indique un vault; no guardar ahí lógica operacional.
+- Usar `remember --scope runtime` solo para memoria operacional del skill.
 - No presentar capacidades planeadas como disponibles.
 - No usar `upgrade` para escribir en el vault ni ejecutar comandos arbitrarios.

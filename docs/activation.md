@@ -32,7 +32,7 @@ En todos los casos, `SKILL.md` debe quedar en la raíz de la carpeta del skill.
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/vault
 ./bin/mi-memoria validate --input note.md
-./bin/mi-memoria remember --summary "..."
+./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
 ./bin/mi-memoria upgrade
 ```
 
