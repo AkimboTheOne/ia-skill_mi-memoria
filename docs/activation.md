@@ -13,7 +13,7 @@
 ```bash
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria validate --input note.md
-./bin/mi-memoria remember --summary "..."
+./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
 ```
 
 ## Lenguaje natural

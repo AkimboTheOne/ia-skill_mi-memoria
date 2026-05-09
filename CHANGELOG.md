@@ -8,5 +8,5 @@
 - Validación Markdown/Obsidian mínima.
 - Workspace transitorio.
 - Escritura controlada hacia vault externo.
-- Memoria curada local.
+- Memoria curada en vault por defecto; memoria local del runtime solo con `--scope runtime`.
 - Setup inicial de vault.

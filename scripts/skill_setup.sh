@@ -73,6 +73,21 @@ source:
 
 ## Pendientes"
 
+create_if_missing "$VAULT/templates/memory.md" "---
+title:
+type: memory
+status: active
+created:
+updated:
+tags: [\"mi-memoria\", \"memory\"]
+aliases: []
+source: remember
+---
+
+# Título
+
+## Memoria"
+
 create_if_missing "$VAULT/indexes/README.md" "# Índices
 
 Índices del vault mi-memoria."

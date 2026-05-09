@@ -25,7 +25,7 @@ Activación CLI:
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria validate --input note.md
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
-./bin/mi-memoria remember --summary "..."
+./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
 ./bin/mi-memoria context --json
 ```
 
@@ -33,7 +33,7 @@ Activación CLI:
 
 - `normalize`: producir notas Markdown con frontmatter y secciones estándar.
 - `validate`: verificar estructura mínima de notas.
-- `remember`: guardar memoria curada, explícita y resumida.
+- `remember`: guardar memoria curada, explícita y resumida en el vault por defecto.
 - `apply`: copiar previews válidos hacia un vault externo.
 - `ask`: activar normalización simple desde lenguaje natural.
 - `context`: mostrar contexto operacional del runtime.
@@ -52,4 +52,5 @@ Activaciones como `/mi-memoria review-docs`, `/mi-memoria align-readme` o `/mi-m
 - Evitar metadata innecesaria.
 - Priorizar claridad sobre creatividad.
 - No escribir al vault sin una operación explícita.
+- Usar `remember --scope runtime` solo para memoria operacional del skill.
 - No presentar capacidades planeadas como disponibles.

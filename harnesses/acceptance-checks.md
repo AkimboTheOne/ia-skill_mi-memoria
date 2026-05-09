@@ -6,8 +6,11 @@
 - `--write` requiere vault válido.
 - `apply` solo acepta previews.
 - `validate` reporta errores y warnings claros.
-- `remember` guarda memoria curada.
+- `remember` guarda memoria curada en `memory/` del vault por defecto.
+- `remember --scope runtime` guarda memoria operacional interna del skill.
+- `remember` sin vault configurado falla salvo que se indique `--scope runtime`.
 - `scripts/skill_setup.sh` inicializa un vault externo.
+- `scripts/skill_setup.sh` crea o completa templates `note.md` y `memory.md` sin sobrescribirlos.
 - El vault no recibe logs, scripts ni dependencias del runtime.
 - Las capacidades documentadas como actuales coinciden con `./bin/mi-memoria capabilities --json`.
 - La suite `make test` pasa antes de publicar cambios documentales.

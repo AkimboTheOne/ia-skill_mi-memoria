@@ -18,7 +18,7 @@ PREVIEW_DIR = WORKSPACE / "preview"
 LOG_FILE = ROOT / "logs" / "operations.log"
 
 REQUIRED_FIELDS = ["title", "type", "status", "created", "updated", "tags"]
-VALID_TYPES = ["note", "decision", "project", "resource", "area"]
+VALID_TYPES = ["note", "decision", "project", "resource", "area", "memory"]
 VALID_STATUSES = ["draft", "review", "active", "archived"]
 VALID_DESTINATIONS = ["00-inbox", "10-areas", "20-projects", "30-resources", "40-archive"]
 STANDARD_SECTIONS = ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
@@ -274,9 +274,13 @@ def validate_text(text: str, filename: str | None = None) -> dict[str, Any]:
         errors.append(f"Estado inválido: {status}")
     if "tags" in frontmatter and not frontmatter["tags"].startswith("["):
         warnings.append("tags debería declararse como lista YAML inline.")
-    for section in STANDARD_SECTIONS:
-        if f"## {section}" not in text:
-            errors.append(f"Falta sección requerida: {section}")
+    if note_type == "memory":
+        if "## Memoria" not in text:
+            errors.append("Falta sección requerida: Memoria")
+    else:
+        for section in STANDARD_SECTIONS:
+            if f"## {section}" not in text:
+                errors.append(f"Falta sección requerida: {section}")
     if filename and not re.match(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$", Path(filename).name):
         errors.append("Nombre de archivo no cumple yyyy-mm-dd-slug.md")
     return {
@@ -286,7 +290,9 @@ def validate_text(text: str, filename: str | None = None) -> dict[str, Any]:
         "checks": {
             "frontmatter": bool(frontmatter),
             "required_fields": all(frontmatter.get(field) for field in REQUIRED_FIELDS),
-            "sections": all(f"## {section}" in text for section in STANDARD_SECTIONS),
+            "sections": "## Memoria" in text
+            if note_type == "memory"
+            else all(f"## {section}" in text for section in STANDARD_SECTIONS),
             "filename": filename is None or not any("Nombre de archivo" in error for error in errors),
         },
     }
@@ -458,34 +464,52 @@ def command_remember(args: argparse.Namespace) -> int:
     if not summary:
         emit({"ok": False, "message": "La memoria requiere --summary no vacío.", "errors": ["summary vacío"]}, args.json)
         return 2
-    ensure_runtime_dirs()
-    title = summary[:60]
-    filename = f"{now_date()}-{slugify(title)}.md"
-    output = unique_path(ROOT / "memory" / "hot" / filename)
-    content = "\n".join(
-        [
-            "---",
-            f'title: {json.dumps(title, ensure_ascii=False)}',
-            "type: memory",
-            "status: active",
-            f"created: {now_date()}",
-            f"updated: {now_date()}",
-            'tags: ["mi-memoria", "memory"]',
-            "source: remember",
-            "---",
-            "",
-            f"# {title}",
-            "",
-            "## Memoria",
-            "",
-            summary,
-            "",
-        ]
-    )
-    output.write_text(content, encoding="utf-8")
-    log_operation("remember", "summary", str(output), "ok")
-    emit({"ok": True, "output_path": str(output), "message": f"Memoria guardada: {output}"}, args.json)
-    return 0
+    try:
+        ensure_runtime_dirs()
+        title = summary[:60]
+        filename = f"{now_date()}-{slugify(title)}.md"
+        if args.scope == "runtime":
+            output = unique_path(ROOT / "memory" / "hot" / filename)
+        else:
+            vault = resolve_vault_path(args.vault_path)
+            output = unique_path(vault / "memory" / filename)
+            ensure_inside(vault, output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+        content = "\n".join(
+            [
+                "---",
+                f'title: {json.dumps(title, ensure_ascii=False)}',
+                "type: memory",
+                "status: active",
+                f"created: {now_date()}",
+                f"updated: {now_date()}",
+                'tags: ["mi-memoria", "memory"]',
+                "source: remember",
+                "---",
+                "",
+                f"# {title}",
+                "",
+                "## Memoria",
+                "",
+                summary,
+                "",
+            ]
+        )
+        output.write_text(content, encoding="utf-8")
+        log_operation(f"remember.{args.scope}", "summary", str(output), "ok")
+        emit(
+            {
+                "ok": True,
+                "scope": args.scope,
+                "output_path": str(output),
+                "message": f"Memoria guardada: {output}",
+            },
+            args.json,
+        )
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "scope": args.scope, "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
 
 
 def command_apply(args: argparse.Namespace) -> int:
@@ -573,6 +597,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     remember = sub.add_parser("remember")
     remember.add_argument("--summary", required=True)
+    remember.add_argument("--scope", choices=["vault", "runtime"], default="vault")
+    remember.add_argument("--vault-path")
     remember.add_argument("--json", action="store_true")
     remember.set_defaults(func=command_remember)
 

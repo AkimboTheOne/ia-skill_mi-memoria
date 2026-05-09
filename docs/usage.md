@@ -27,5 +27,13 @@
 ## Memoria
 
 ```bash
-./bin/mi-memoria remember --summary "Convención aprobada: usar estado draft por defecto."
+./bin/mi-memoria remember --summary "Convención aprobada: usar estado draft por defecto." --vault-path /path/to/vault
+```
+
+`remember` guarda memoria curada en `memory/` del vault por defecto. También puede usar `MI_MEMORIA_VAULT_PATH`.
+
+La memoria interna del runtime es una excepción explícita para modular o actualizar el comportamiento del skill:
+
+```bash
+./bin/mi-memoria remember --summary "Convención interna del skill." --scope runtime
 ```
