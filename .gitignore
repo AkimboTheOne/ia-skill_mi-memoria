@@ -1,0 +1,14 @@
+logs/*
+tmp/*
+
+.env
+.env.local
+
+__pycache__/
+.pytest_cache/
+dist/
+build/
+
+!logs/.gitkeep
+!tmp/.gitkeep
+!.env.example
