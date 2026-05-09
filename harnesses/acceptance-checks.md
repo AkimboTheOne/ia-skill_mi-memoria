@@ -6,11 +6,14 @@
 - `--write` requiere vault válido.
 - `apply` solo acepta previews.
 - `validate` reporta errores y warnings claros.
+- `template list` muestra plantillas CORE.
+- `template generate --preview` crea previews en `workspace/preview/templates`.
+- `template apply` copia previews válidos a `vault/templates` sin sobrescribir.
 - `remember` guarda memoria curada en `memory/` del vault por defecto.
 - `remember --scope runtime` guarda memoria operacional interna del skill.
 - `remember` sin vault configurado falla salvo que se indique `--scope runtime`.
 - `scripts/skill_setup.sh` inicializa un vault externo.
-- `scripts/skill_setup.sh` crea o completa templates `note.md` y `memory.md` sin sobrescribirlos.
+- `scripts/skill_setup.sh` crea o completa templates `note.md`, `memory.md` y `log.md` sin sobrescribirlos.
 - Las plantillas del vault tienen prioridad sobre las plantillas CORE del runtime.
 - Si falta una plantilla primitiva en el vault, el runtime usa CORE y emite warning.
 - El vault no recibe logs, scripts ni dependencias del runtime.

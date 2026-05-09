@@ -24,6 +24,18 @@
 ./bin/mi-memoria validate --input archivo.md --json
 ```
 
+## Plantillas
+
+```bash
+./bin/mi-memoria template list --json
+./bin/mi-memoria template show --name note --vault-path /path/to/vault
+./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview --json
+./bin/mi-memoria template validate --input workspace/preview/templates/log-diario.md --json
+./bin/mi-memoria template apply --input workspace/preview/templates/log-diario.md --vault-path /path/to/vault --json
+```
+
+`template generate` no escribe al vault. Genera previews en `workspace/preview/templates`. `template apply` requiere vault y no sobrescribe templates existentes.
+
 ## Memoria
 
 ```bash

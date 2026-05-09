@@ -24,6 +24,8 @@ Activación CLI:
 ./bin/mi-memoria ask "Normaliza esta nota sobre arquitectura"
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria validate --input note.md
+./bin/mi-memoria template list --json
+./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
 ./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
 ./bin/mi-memoria context --json
@@ -34,6 +36,7 @@ Activación CLI:
 - `normalize`: producir notas Markdown con frontmatter y secciones estándar.
 - `validate`: verificar estructura mínima de notas.
 - `remember`: guardar memoria curada, explícita y resumida en el vault por defecto.
+- `template`: listar, revisar, generar, validar y aplicar plantillas Markdown.
 - `apply`: copiar previews válidos hacia un vault externo.
 - `ask`: activar normalización simple desde lenguaje natural.
 - `context`: mostrar contexto operacional del runtime.

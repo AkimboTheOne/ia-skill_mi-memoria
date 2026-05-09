@@ -38,6 +38,7 @@ class MiMemoriaCliTests(unittest.TestCase):
         self.assertTrue(data["ok"])
         self.assertIn("normalize", data["skills"])
         self.assertIn("memory", data["types"])
+        self.assertIn("template", data["commands"])
 
     def test_normalize_preview_and_validate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -161,6 +162,150 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertEqual(data["template"]["source"], "vault")
             output = Path(data["output_path"])
             self.assertIn("## Contexto local", output.read_text(encoding="utf-8"))
+
+    def test_template_list_shows_core_templates(self) -> None:
+        result = self.run_cli("template", "list", "--json")
+        data = json.loads(result.stdout)
+        self.assertTrue(data["ok"])
+        core_names = {template["name"] for template in data["core"]}
+        self.assertTrue({"note", "memory", "log"}.issubset(core_names))
+
+    def test_template_show_prefers_vault_template(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            (vault / "templates" / "log.md").write_text(
+                "---\ntitle:\ntype: note\nstatus: active\ncreated:\nupdated:\ntags: []\naliases: []\nsource:\n---\n\n# Log local\n\n## Registro\n",
+                encoding="utf-8",
+            )
+            result = self.run_cli("template", "show", "--name", "log", "--vault-path", str(vault), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["template"]["source"], "vault")
+            self.assertIn("# Log local", data["content"])
+
+    def test_template_generate_description_preview(self) -> None:
+        result = self.run_cli(
+            "template",
+            "generate",
+            "--name",
+            "log-diario",
+            "--type",
+            "note",
+            "--description",
+            "Registro diario de eventos",
+            "--preview",
+            "--json",
+        )
+        data = json.loads(result.stdout)
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["command"], "template generate")
+        self.assertEqual(data["mode"], "preview")
+        output = Path(data["output_path"])
+        self.addCleanup(lambda path=output: path.exists() and path.unlink())
+        self.assertTrue(output.exists())
+        self.assertIn("## Registro", output.read_text(encoding="utf-8"))
+
+    def test_template_generate_input_context_preview(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            context = Path(tmp) / "context.yaml"
+            context.write_text(
+                "title: Cliente CRM\ntype: note\nstatus: draft\ntags: [crm, cliente]\nsections:\n  - Perfil\n  - Oportunidades\n  - Pendientes\n",
+                encoding="utf-8",
+            )
+            result = self.run_cli(
+                "template",
+                "generate",
+                "--name",
+                "cliente-crm",
+                "--type",
+                "note",
+                "--input",
+                str(context),
+                "--description",
+                "Contexto comercial",
+                "--preview",
+                "--json",
+            )
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            output = Path(data["output_path"])
+            self.addCleanup(lambda path=output: path.exists() and path.unlink())
+            content = output.read_text(encoding="utf-8")
+            self.assertIn("# Cliente CRM", content)
+            self.assertIn("## Perfil", content)
+            self.assertIn("## Contexto", content)
+
+    def test_template_validate_rejects_invalid_template(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            invalid = Path(tmp) / "invalid.md"
+            invalid.write_text("# Sin frontmatter\n", encoding="utf-8")
+            result = self.run_cli("template", "validate", "--input", str(invalid), "--json", check=False)
+            data = json.loads(result.stdout)
+            self.assertFalse(data["ok"])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertTrue(data["errors"])
+
+    def test_template_apply_writes_preview_to_vault(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            generated = self.run_cli(
+                "template",
+                "generate",
+                "--name",
+                "cliente-crm",
+                "--type",
+                "note",
+                "--description",
+                "Cliente CRM",
+                "--preview",
+                "--json",
+            )
+            generated_data = json.loads(generated.stdout)
+            preview = Path(generated_data["output_path"])
+            self.addCleanup(lambda path=preview: path.exists() and path.unlink())
+            applied = self.run_cli(
+                "template",
+                "apply",
+                "--input",
+                str(preview),
+                "--vault-path",
+                str(vault),
+                "--json",
+            )
+            applied_data = json.loads(applied.stdout)
+            self.assertTrue(applied_data["ok"])
+            self.assertTrue((vault / "templates" / preview.name).exists())
+
+    def test_template_apply_does_not_overwrite_existing_template(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            generated = self.run_cli(
+                "template",
+                "generate",
+                "--name",
+                "log",
+                "--type",
+                "note",
+                "--description",
+                "Registro",
+                "--preview",
+                "--json",
+            )
+            preview = Path(json.loads(generated.stdout)["output_path"])
+            self.addCleanup(lambda path=preview: path.exists() and path.unlink())
+            result = self.run_cli(
+                "template",
+                "apply",
+                "--input",
+                str(preview),
+                "--vault-path",
+                str(vault),
+                "--json",
+                check=False,
+            )
+            data = json.loads(result.stdout)
+            self.assertFalse(data["ok"])
+            self.assertIn("ya existe", data["message"])
 
     def test_remember_runtime_scope(self) -> None:
         result = self.run_cli(

@@ -70,6 +70,7 @@ copy_template_if_missing() {
 
 copy_template_if_missing "note"
 copy_template_if_missing "memory"
+copy_template_if_missing "log"
 
 create_if_missing "$VAULT/indexes/README.md" "# Índices
 
