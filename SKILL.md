@@ -17,12 +17,18 @@ Activaciones naturales:
 - "Normaliza esta nota."
 - "Guarda esta decisión como memoria."
 
+Alias de activación:
+
+- `/mi-memoria`
+- `/mem`
+
 Activación CLI:
 
 ```bash
 ./bin/mi-memoria capabilities --json
 ./bin/mi-memoria ask "Normaliza esta nota sobre arquitectura"
 ./bin/mi-memoria run normalize --input note.md --preview
+./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/vault
 ./bin/mi-memoria validate --input note.md
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
 ./bin/mi-memoria remember --summary "..."
@@ -34,16 +40,16 @@ Activación CLI:
 - `normalize`: producir notas Markdown con frontmatter y secciones estándar.
 - `validate`: verificar estructura mínima de notas.
 - `remember`: guardar memoria curada, explícita y resumida.
-- `apply`: copiar previews válidos hacia un vault externo.
-- `ask`: activar normalización simple desde lenguaje natural.
-- `context`: mostrar contexto operacional del runtime.
+- `apply`: copiar previews válidos desde el workspace del runtime o del vault hacia un destino final.
+- `ask`: activar normalización simple desde lenguaje natural; usa `vault/workspace/preview` si hay vault configurado.
+- `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
 - `capabilities`: exponer el contrato operativo actual del CLI.
 
 ## Capacidades planeadas
 
 La revisión documental y alineación contra master-plan es una capacidad propuesta, no implementada en v0.1.
 
-Activaciones como `/mi-memoria review-docs`, `/mi-memoria align-readme` o `/mi-memoria review-master-plan` deben tratarse como roadmap hasta que existan en el CLI, estén documentadas como actuales y tengan pruebas.
+Activaciones como `/mi-memoria review-docs`, `/mem review-docs`, `/mi-memoria align-readme`, `/mem align-readme`, `/mi-memoria review-master-plan` o `/mem review-master-plan` deben tratarse como roadmap hasta que existan en el CLI, estén documentadas como actuales y tengan pruebas.
 
 ## Reglas
 
@@ -52,4 +58,5 @@ Activaciones como `/mi-memoria review-docs`, `/mi-memoria align-readme` o `/mi-m
 - Evitar metadata innecesaria.
 - Priorizar claridad sobre creatividad.
 - No escribir al vault sin una operación explícita.
+- Usar `vault/workspace/preview` como staging visible cuando se indique un vault; no guardar ahí lógica operacional.
 - No presentar capacidades planeadas como disponibles.
