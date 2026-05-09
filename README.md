@@ -20,6 +20,8 @@ La fuente operativa para capacidades actuales es:
 ./bin/mi-memoria capabilities --json
 ```
 
+En conversaciones con Codex, `/mem` es alias corto de `/mi-memoria`. El binario local se mantiene como `mi-memoria`.
+
 En v0.1 el runtime expone:
 
 - `normalize`: normaliza Markdown libre hacia una nota Obsidian consistente.

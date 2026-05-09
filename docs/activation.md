@@ -6,7 +6,12 @@
 /mi-memoria normalize
 /mi-memoria remember
 /mi-memoria validate
+/mem normalize
+/mem remember
+/mem validate
 ```
+
+`/mem` es alias corto de `/mi-memoria`. Ambos activan el mismo runtime, las mismas reglas y las mismas capacidades; no existe un segundo CLI.
 
 ## CLI local
 

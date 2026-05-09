@@ -197,12 +197,23 @@ Activación principal:
 /mi-memoria
 ```
 
+Alias corto:
+
+```text
+/mem
+```
+
+`/mem` activa el mismo runtime y no implica un segundo binario ni una segunda implementación.
+
 Ejemplos:
 
 ```text
 /mi-memoria normalize
 /mi-memoria remember
 /mi-memoria validate
+/mem normalize
+/mem remember
+/mem validate
 ```
 
 ---

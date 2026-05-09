@@ -17,3 +17,5 @@ Se diferencia el workspace tecnico del runtime (`runtime/workspace`) del workspa
 El runtime conserva temporales tecnicos y fallback local. El vault debe incluir `workspace/inbox`, `workspace/processing`, `workspace/preview` y `workspace/exports` para revisar, editar y reubicar ideas desde Obsidian sin introducir scripts, logs, dependencias ni logica operacional dentro del vault.
 
 Las pruebas y temporales controlados por el runtime deben preferir `runtime/tmp/tests` o `runtime/tmp` sobre temporales del sistema para evitar diferencias del anfitrion como `/var` frente a `/private/var`.
+
+Se adopta `/mem` como alias corto de activacion de `/mi-memoria` para uso conversacional. El CLI local sigue siendo `mi-memoria`.

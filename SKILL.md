@@ -17,6 +17,11 @@ Activaciones naturales:
 - "Normaliza esta nota."
 - "Guarda esta decisión como memoria."
 
+Alias de activación:
+
+- `/mi-memoria`
+- `/mem`
+
 Activación CLI:
 
 ```bash
@@ -44,7 +49,7 @@ Activación CLI:
 
 La revisión documental y alineación contra master-plan es una capacidad propuesta, no implementada en v0.1.
 
-Activaciones como `/mi-memoria review-docs`, `/mi-memoria align-readme` o `/mi-memoria review-master-plan` deben tratarse como roadmap hasta que existan en el CLI, estén documentadas como actuales y tengan pruebas.
+Activaciones como `/mi-memoria review-docs`, `/mem review-docs`, `/mi-memoria align-readme`, `/mem align-readme`, `/mi-memoria review-master-plan` o `/mem review-master-plan` deben tratarse como roadmap hasta que existan en el CLI, estén documentadas como actuales y tengan pruebas.
 
 ## Reglas
 
