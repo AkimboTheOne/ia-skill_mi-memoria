@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import unicodedata
 from datetime import datetime
@@ -343,13 +344,82 @@ def ensure_inside(base: Path, target: Path) -> None:
         raise ValueError(f"Destino fuera del vault permitido: {target}")
 
 
+def run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, text=True, capture_output=True, check=False)
+
+
+def command_upgrade(args: argparse.Namespace) -> int:
+    runtime = str(ROOT)
+    command = ["git", "-C", runtime, "pull", "--ff-only"]
+    try:
+        git_dir = run_git_command(["git", "-C", runtime, "rev-parse", "--git-dir"])
+        if git_dir.returncode != 0:
+            emit(
+                {
+                    "ok": False,
+                    "command": "upgrade",
+                    "runtime": runtime,
+                    "stdout": git_dir.stdout,
+                    "stderr": git_dir.stderr,
+                    "returncode": git_dir.returncode,
+                    "message": "No se pudo actualizar: el runtime no está dentro de un repositorio Git.",
+                },
+                args.json,
+            )
+            return 2
+        remote = run_git_command(["git", "-C", runtime, "remote", "get-url", "origin"])
+        if remote.returncode != 0:
+            emit(
+                {
+                    "ok": False,
+                    "command": "upgrade",
+                    "runtime": runtime,
+                    "stdout": remote.stdout,
+                    "stderr": remote.stderr,
+                    "returncode": remote.returncode,
+                    "message": "No se pudo actualizar: el runtime no tiene remoto origin configurado.",
+                },
+                args.json,
+            )
+            return 2
+        result = run_git_command(command)
+        ok = result.returncode == 0
+        emit(
+            {
+                "ok": ok,
+                "command": "upgrade",
+                "runtime": runtime,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "returncode": result.returncode,
+                "message": "Skill actualizado con git pull --ff-only." if ok else "No se pudo actualizar el skill con git pull --ff-only.",
+            },
+            args.json,
+        )
+        return 0 if ok else 1
+    except FileNotFoundError as exc:
+        emit(
+            {
+                "ok": False,
+                "command": "upgrade",
+                "runtime": runtime,
+                "stdout": "",
+                "stderr": str(exc),
+                "returncode": 127,
+                "message": "No se pudo actualizar: Git no está disponible.",
+            },
+            args.json,
+        )
+        return 2
+
+
 def command_capabilities(args: argparse.Namespace) -> int:
     data = {
         "ok": True,
         "name": "mi-memoria",
         "version": "0.1.0",
         "skills": ["normalize"],
-        "commands": ["ask", "explain", "context", "capabilities", "run normalize", "validate", "remember", "apply"],
+        "commands": ["ask", "explain", "context", "capabilities", "run normalize", "validate", "remember", "apply", "upgrade"],
         "types": VALID_TYPES,
         "statuses": VALID_STATUSES,
         "destinations": VALID_DESTINATIONS,
@@ -609,6 +679,10 @@ def build_parser() -> argparse.ArgumentParser:
     capabilities = sub.add_parser("capabilities")
     capabilities.add_argument("--json", action="store_true")
     capabilities.set_defaults(func=command_capabilities)
+
+    upgrade = sub.add_parser("upgrade")
+    upgrade.add_argument("--json", action="store_true")
+    upgrade.set_defaults(func=command_upgrade)
 
     run = sub.add_parser("run")
     run.add_argument("skill")

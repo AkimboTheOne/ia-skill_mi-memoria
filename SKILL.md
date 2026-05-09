@@ -33,6 +33,7 @@ Activación CLI:
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
 ./bin/mi-memoria remember --summary "..."
 ./bin/mi-memoria context --json
+./bin/mi-memoria upgrade --json
 ```
 
 ## Capacidades actuales
@@ -44,6 +45,7 @@ Activación CLI:
 - `ask`: activar normalización simple desde lenguaje natural; usa `vault/workspace/preview` si hay vault configurado.
 - `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
 - `capabilities`: exponer el contrato operativo actual del CLI.
+- `upgrade`: actualizar el runtime del skill con `git pull --ff-only` acotado a este repo.
 
 ## Capacidades planeadas
 
@@ -60,3 +62,4 @@ Activaciones como `/mi-memoria review-docs`, `/mem review-docs`, `/mi-memoria al
 - No escribir al vault sin una operación explícita.
 - Usar `vault/workspace/preview` como staging visible cuando se indique un vault; no guardar ahí lógica operacional.
 - No presentar capacidades planeadas como disponibles.
+- No usar `upgrade` para escribir en el vault ni ejecutar comandos arbitrarios.
