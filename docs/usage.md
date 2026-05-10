@@ -65,6 +65,33 @@ Extrae fechas de frontmatter y marca como `inferred` cuando se deducen.
 
 Genera `drift-report.md` y `drift-report.json` con deriva verificable.
 
+## Query contextual
+
+```bash
+./bin/mi-memoria query "runtime separado del vault" --path . --json
+```
+
+`query` retorna `results`, `evidence`, `inference` y `uncertainty`.
+
+## Context build
+
+```bash
+./bin/mi-memoria context-build --topic "taxonomía" --path . --json
+```
+
+Genera `context-pack.md`, `context-pack.json` y `source-map.json` en `workspace/exports`.
+
+## Session temporal
+
+```bash
+./bin/mi-memoria session start --name arquitectura-mi-memoria --json
+./bin/mi-memoria session add --name arquitectura-mi-memoria --input workspace/inbox/2026-05-08-idea.md --json
+./bin/mi-memoria session context --name arquitectura-mi-memoria --json
+./bin/mi-memoria session close --name arquitectura-mi-memoria --remember --json
+```
+
+`session close --remember` no persiste memoria automáticamente; requiere flujo explícito de curaduría.
+
 ## Normalizar con preview
 
 ```bash

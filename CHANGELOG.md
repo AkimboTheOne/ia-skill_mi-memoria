@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.0
+
+- Implementación P3 con nuevos comandos top-level: `query`, `context-build`, `session`.
+- `query` incorpora búsqueda local por nombre/título/tags/contenido y respuesta con `evidence`, `inference` y `uncertainty`.
+- `context-build` genera paquetes de contexto acotados con artefactos `context-pack.md`, `context-pack.json` y `source-map.json`.
+- `session` agrega ciclo transitorio `start/add/context/close` sin persistencia automática de memoria.
+- `capabilities --json` incluye `maturity` operativa y alinea versión runtime a `0.3.0`.
+- Se formaliza política de versionamiento y madurez en `AGENTS.md`.
+
 ## v0.1.0
 
 - Baseline inicial del runtime local `mi-memoria`.

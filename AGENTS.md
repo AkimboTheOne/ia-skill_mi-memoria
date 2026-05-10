@@ -48,3 +48,19 @@
 - Cobertura mínima en `tests/test_cli.py` para caso exitoso y restricción crítica.
 - Documentación alineada en `README.md`, `SKILL.md` y `docs/usage.md`.
 - `make test` en verde antes de cerrar la tarea.
+
+## Política de Versionamiento y Madurez
+
+- Esquema canónico:
+- `v0.1.x`: baseline y consolidación inicial.
+- `v0.2.x`: P2 estabilizado.
+- `v0.3.x`: P3 (inteligencia contextual local).
+- Campos obligatorios en cada release: `cli/__init__.py::__version__`, `capabilities.version`, `CHANGELOG.md`, `README.md` y `SKILL.md` deben quedar alineados.
+- Una fase solo puede marcarse `stable` con comandos implementados, pruebas en verde y documentación alineada.
+- Capacidades no implementadas deben quedar explícitamente como `roadmap` o `propuesta`.
+- Semántica de madurez operativa:
+- `p1-stable`
+- `p2-stable`
+- `p3-in-progress`
+- `p3-stable`
+- `capabilities --json` debe exponer siempre la madurez operativa vigente.

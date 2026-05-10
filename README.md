@@ -2,7 +2,7 @@
 
 Runtime local de skills para operar sobre repositorios de conocimiento Markdown, separado del vault de conocimiento.
 
-`mi-memoria` v0.1 implementa una baseline mínima:
+`mi-memoria` v0.3 implementa baseline + P1/P2/P3:
 
 - CLI local sin dependencias externas obligatorias.
 - Skill `normalize` para convertir texto o Markdown libre en notas Obsidian consistentes.
@@ -46,7 +46,7 @@ Ubicaciones comunes según agente:
 
 Para que un agente reconozca la habilidad, el archivo `SKILL.md` debe quedar en la raíz de la carpeta del skill.
 
-## Capacidades actuales v0.1
+## Capacidades actuales v0.3
 
 La fuente operativa para capacidades actuales es:
 
@@ -56,7 +56,7 @@ La fuente operativa para capacidades actuales es:
 
 En conversaciones con Codex, `/mem` es alias corto de `/mi-memoria`. El binario local se mantiene como `mi-memoria`.
 
-En v0.1 el runtime expone:
+En v0.3 el runtime expone:
 
 - `capture`: captura ideas/notas rápidas en `workspace/inbox` con estructura validable.
 - `classify`: propone destino taxonómico (`00/10/20/30/40`) con racional y alternativas.
@@ -70,11 +70,15 @@ En v0.1 el runtime expone:
 - `timeline`: construye línea de tiempo trazable con fechas explícitas o inferidas.
 - `drift-detection`: detecta deriva estructural/taxonómica y emite reportes `.md` + `.json`.
 - `archive`: ejecuta archivado gobernado en `40-archive/` con `--preview|--apply`.
+- `query`: consulta contextual local con evidencia, inferencia e incertidumbre explícitas.
+- `context-build`: construye paquetes de contexto acotados con `context-pack` y `source-map`.
+- `session`: gestiona sesiones temporales (`start/add/context/close`) sin persistencia automática.
 - `template`: lista, muestra, genera, valida y aplica plantillas Markdown.
 - `apply`: aplica un preview validado desde el workspace del runtime o del vault hacia un destino final del vault.
 - `ask`: detecta intenciones simples de normalización desde lenguaje natural.
 - `context`: reporta runtime, workspace técnico, vault configurado, workspace visible e idioma.
 - `capabilities`: lista capacidades, comandos, tipos, estados y destinos soportados.
+- `capabilities`: también expone `version` y `maturity` operativa.
 - `upgrade`: actualiza el runtime del skill con `git pull --ff-only`.
 
 ## Capacidades planeadas
