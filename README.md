@@ -58,6 +58,11 @@ En conversaciones con Codex, `/mem` es alias corto de `/mi-memoria`. El binario 
 
 En v0.1 el runtime expone:
 
+- `capture`: captura ideas/notas rápidas en `workspace/inbox` con estructura validable.
+- `classify`: propone destino taxonómico (`00/10/20/30/40`) con racional y alternativas.
+- `review`: genera reportes de calidad estructural en `.md` y `.json`.
+- `link`: sugiere wikilinks candidatos sin persistir cambios automáticamente.
+- `summarize`: sintetiza nota/carpeta con trazabilidad de fuentes.
 - `normalize`: normaliza Markdown libre hacia una nota Obsidian consistente.
 - `validate`: valida frontmatter, secciones mínimas y nombre de archivo.
 - `remember`: registra memoria curada y resumida en `memory/` del vault por defecto.
@@ -78,6 +83,11 @@ El objetivo futuro es generar planes o reportes de alineación documental que di
 
 ```bash
 ./bin/mi-memoria capabilities --json
+./bin/mi-memoria capture --text "Idea rápida"
+./bin/mi-memoria classify --input workspace/inbox/2026-05-08-idea.md --json
+./bin/mi-memoria review --path workspace/inbox --json
+./bin/mi-memoria link --input workspace/inbox/2026-05-08-idea.md --preview --json
+./bin/mi-memoria summarize --path workspace/inbox --json
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/mi-memoria-vault
 ./bin/mi-memoria validate --input workspace/preview/2026-05-08-nota.md

@@ -15,3 +15,36 @@
 - Sin APIs externas.
 - Sin secretos, tokens ni credenciales.
 - Sin agentes autónomos.
+
+## Contexto de Código (para contributors/agentes)
+
+- Lenguaje: Python estándar (sin dependencias externas obligatorias).
+- Entry point CLI: `bin/mi-memoria` y parser/comandos en `cli/main.py`.
+- Suite de pruebas: `tests/test_cli.py` (ejecutar con `make test`).
+- Plantillas CORE: `skills/core/templates/*.md`.
+- Setup mínimo de vault: `scripts/skill_setup.sh`.
+- Historial de cambios funcionales: revisar `CHANGELOG.md` antes de diseñar/refactorizar.
+
+## Capacidades P1 implementadas
+
+- `capture`: crea notas en `workspace/inbox` (runtime o vault workspace visible).
+- `classify`: propone destino taxonómico con racional; no mueve archivos.
+- `review`: emite reportes verificables `.md` y `.json`.
+- `link`: sugiere wikilinks sin persistir.
+- `summarize`: genera síntesis con trazabilidad de fuentes.
+
+## Reglas de Mutación durante desarrollo
+
+- No romper contratos existentes (`normalize`, `validate`, `remember`, `template`, `apply`, `context`, `capabilities`, `upgrade`).
+- Toda escritura final al vault debe seguir siendo explícita (`--write` o `apply`).
+- `classify`, `review`, `link`, `summarize` no deben mover ni reubicar notas automáticamente.
+- Mantener salida dual: humana y JSON en comandos operacionales.
+- `capabilities --json` debe reflejar comandos reales implementados.
+
+## Definición de Terminado (DoD) para cambios de CLI
+
+- Comando accesible desde parser top-level.
+- Salida JSON consistente con campos `ok`, `command`, y artefactos/resultados del comando.
+- Cobertura mínima en `tests/test_cli.py` para caso exitoso y restricción crítica.
+- Documentación alineada en `README.md`, `SKILL.md` y `docs/usage.md`.
+- `make test` en verde antes de cerrar la tarea.

@@ -563,6 +563,56 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertTrue(output.exists())
             self.assertEqual(output.parent.resolve(), (vault / "workspace" / "preview").resolve())
 
+    def test_capture_creates_note_in_runtime_workspace_inbox(self) -> None:
+        result = self.run_cli("capture", "--text", "Idea rapida para proyecto", "--json")
+        data = json.loads(result.stdout)
+        self.assertTrue(data["ok"])
+        output = Path(data["output_path"])
+        self.addCleanup(lambda path=output: path.exists() and path.unlink())
+        self.assertTrue(output.exists())
+        self.assertEqual(output.parent.resolve(), (ROOT / "workspace" / "inbox").resolve())
+
+    def test_classify_returns_destination_without_moving(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "2026-01-01-mi-nota.md"
+            note.write_text("# Proyecto X\n\nRoadmap y tareas.", encoding="utf-8")
+            result = self.run_cli("classify", "--input", str(note), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertIn(data["proposed_destination"], cli_main.VALID_DESTINATIONS)
+            self.assertTrue(note.exists())
+
+    def test_review_generates_reports(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "2026-01-01-nota.md"
+            note.write_text("# Sin frontmatter\n", encoding="utf-8")
+            result = self.run_cli("review", "--input", str(note), "--json", check=False)
+            data = json.loads(result.stdout)
+            self.assertIn("report_paths", data)
+            self.assertTrue(Path(data["report_paths"]["md"]).exists())
+            self.assertTrue(Path(data["report_paths"]["json"]).exists())
+
+    def test_link_returns_suggestions_without_modifying_source(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "note.md"
+            content = "# Nota Principal\n\n## Arquitectura Local\n"
+            note.write_text(content, encoding="utf-8")
+            result = self.run_cli("link", "--input", str(note), "--preview", "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertIn("suggested_links", data)
+            self.assertEqual(note.read_text(encoding="utf-8"), content)
+
+    def test_summarize_generates_traceable_summary(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "note.md"
+            note.write_text("# Nota\n\nContenido con una decision.", encoding="utf-8")
+            result = self.run_cli("summarize", "--input", str(note), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertTrue(Path(data["output_path"]).exists())
+            self.assertEqual(len(data["sources"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

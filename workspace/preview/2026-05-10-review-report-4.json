@@ -1,0 +1,26 @@
+{
+  "ok": false,
+  "checks": {
+    "files": 1,
+    "valid_files": 0
+  },
+  "issues": [
+    {
+      "file": "/tmp/mi-memoria-p1-l6xp8w/input.md",
+      "errors": [
+        "Falta frontmatter requerido: title",
+        "Falta frontmatter requerido: type",
+        "Falta frontmatter requerido: status",
+        "Falta frontmatter requerido: created",
+        "Falta frontmatter requerido: updated",
+        "Falta frontmatter requerido: tags",
+        "Falta sección requerida: Resumen",
+        "Falta sección requerida: Desarrollo",
+        "Falta sección requerida: Relaciones",
+        "Falta sección requerida: Pendientes",
+        "Nombre de archivo no cumple yyyy-mm-dd-slug.md"
+      ],
+      "warnings": []
+    }
+  ]
+}

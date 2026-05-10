@@ -1,5 +1,46 @@
 # Uso
 
+## Captura rápida
+
+```bash
+./bin/mi-memoria capture --text "Idea rápida"
+./bin/mi-memoria capture --input note.md --json
+```
+
+`capture` guarda en `workspace/inbox` del runtime por defecto, o en `vault/workspace/inbox` si hay vault configurado.
+
+## Clasificación (sin mover)
+
+```bash
+./bin/mi-memoria classify --input workspace/inbox/2026-05-08-idea.md --json
+```
+
+`classify` propone destino y alternativas; no mueve archivos.
+
+## Review
+
+```bash
+./bin/mi-memoria review --input workspace/inbox/2026-05-08-idea.md --json
+./bin/mi-memoria review --path workspace/inbox --json
+```
+
+`review` genera reportes en `workspace/preview`: `*-review-report.md` y `*-review-report.json`.
+
+## Link (sugerencias)
+
+```bash
+./bin/mi-memoria link --input workspace/inbox/2026-05-08-idea.md --preview --json
+```
+
+`link` sugiere wikilinks; no escribe en la nota fuente.
+
+## Summarize
+
+```bash
+./bin/mi-memoria summarize --input workspace/inbox/2026-05-08-idea.md --json
+./bin/mi-memoria summarize --path workspace/inbox --output workspace/preview/summary.md --json
+```
+
 ## Normalizar con preview
 
 ```bash
