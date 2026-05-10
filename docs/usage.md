@@ -41,6 +41,30 @@
 ./bin/mi-memoria summarize --path workspace/inbox --output workspace/preview/summary.md --json
 ```
 
+## Index
+
+```bash
+./bin/mi-memoria index --path workspace/inbox --json
+```
+
+Genera índice navegable y detección de títulos duplicados sin mover archivos.
+
+## Timeline
+
+```bash
+./bin/mi-memoria timeline --path workspace/inbox --json
+```
+
+Extrae fechas de frontmatter y marca como `inferred` cuando se deducen.
+
+## Drift detection
+
+```bash
+./bin/mi-memoria drift-detection --path workspace/inbox --json
+```
+
+Genera `drift-report.md` y `drift-report.json` con deriva verificable.
+
 ## Normalizar con preview
 
 ```bash
@@ -93,6 +117,7 @@ Con `--vault-path` o `MI_MEMORIA_VAULT_PATH`, el preview queda en `vault/workspa
 
 ```bash
 ./bin/mi-memoria remember --summary "Convención aprobada: usar estado draft por defecto." --vault-path /path/to/vault
+./bin/mi-memoria remember --type convention --summary "Usar preview antes de apply." --vault-path /path/to/vault
 ```
 
 `remember` guarda memoria curada en `memory/` del vault por defecto. También puede usar `MI_MEMORIA_VAULT_PATH`.
@@ -107,4 +132,11 @@ La memoria interna del runtime es una excepción explícita para modular o actua
 
 ```bash
 ./bin/mi-memoria remember --summary "Convención interna del skill." --scope runtime
+```
+
+## Archive gobernado
+
+```bash
+./bin/mi-memoria archive --input 30-resources/2026-05-10-nota.md --preview --vault-path /path/to/vault --json
+./bin/mi-memoria archive --input 30-resources/2026-05-10-nota.md --apply --vault-path /path/to/vault --json
 ```

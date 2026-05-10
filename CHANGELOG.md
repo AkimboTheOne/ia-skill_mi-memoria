@@ -26,3 +26,14 @@
 - `capabilities --json` actualizado para exponer capacidades P1 implementadas.
 - Cobertura de pruebas ampliada en `tests/test_cli.py` para contratos y restricciones de P1.
 - Documentación operativa actualizada en `README.md`, `SKILL.md` y `docs/usage.md`.
+
+## v0.2.0
+
+- Expansión P2 del CLI con comandos top-level: `index`, `timeline`, `drift-detection`, `archive`.
+- `index` genera índice navegable en Markdown y contrato JSON con totales y títulos duplicados.
+- `timeline` genera línea de tiempo trazable y marca eventos con fecha inferida (`inferred=true`) cuando aplica.
+- `drift-detection` detecta deriva verificable (frontmatter, tags duplicados, links rotos, notas huérfanas, aliases redundantes) y emite reporte `.md` + `.json`.
+- `archive` incorpora flujo gobernado con `--preview|--apply`, sin borrado ni sobrescritura.
+- `remember` evoluciona a `remember+` con `--type` (`decision`, `convention`, `learning`, `constraint`, `taxonomy`) y soporte `--input` como fuente curada.
+- `capabilities --json` actualizado con comandos P2 implementados.
+- Cobertura de pruebas ampliada en `tests/test_cli.py` para casos exitosos y restricciones críticas de P2.

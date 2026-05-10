@@ -1,6 +1,6 @@
 ---
 name: mi-memoria
-description: Use this runtime when the user wants to organize, normalize, validate, remember, or apply curated Markdown knowledge for an external Obsidian vault, with explicit preview/write boundaries.
+description: Use this runtime when the user wants to organize, normalize, validate, index, build timelines, detect drift, archive with explicit controls, remember, or apply curated Markdown knowledge for an external Obsidian vault, with explicit preview/write boundaries.
 ---
 
 # mi-memoria
@@ -31,6 +31,9 @@ Activación CLI:
 ./bin/mi-memoria review --path workspace/inbox --json
 ./bin/mi-memoria link --input workspace/inbox/2026-05-10-idea.md --preview --json
 ./bin/mi-memoria summarize --path workspace/inbox --json
+./bin/mi-memoria index --path workspace/inbox --json
+./bin/mi-memoria timeline --path workspace/inbox --json
+./bin/mi-memoria drift-detection --path workspace/inbox --json
 ./bin/mi-memoria ask "Normaliza esta nota sobre arquitectura"
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/vault
@@ -39,6 +42,8 @@ Activación CLI:
 ./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
 ./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
+./bin/mi-memoria remember --type decision --summary "..." --vault-path /path/to/vault
+./bin/mi-memoria archive --input 30-resources/2026-05-10-nota.md --preview --vault-path /path/to/vault
 ./bin/mi-memoria context --json
 ./bin/mi-memoria upgrade --json
 ```
@@ -53,6 +58,10 @@ Activación CLI:
 - `normalize`: producir notas Markdown con frontmatter y secciones estándar.
 - `validate`: verificar estructura mínima de notas.
 - `remember`: guardar memoria curada, explícita y resumida en el vault por defecto.
+- `index`: construir índices navegables con reporte de duplicados.
+- `timeline`: construir historial temporal trazable.
+- `drift-detection`: detectar deriva estructural/taxonómica con reportes.
+- `archive`: archivar en `40-archive` mediante `preview/apply` explícito.
 - `template`: listar, revisar, generar, validar y aplicar plantillas Markdown.
 - `apply`: copiar previews válidos desde el workspace del runtime o del vault hacia un destino final.
 - `ask`: activar normalización simple desde lenguaje natural; usa `vault/workspace/preview` si hay vault configurado.

@@ -27,6 +27,7 @@ VALID_TYPES = ["note", "decision", "project", "resource", "area", "memory"]
 VALID_STATUSES = ["draft", "review", "active", "archived"]
 VALID_DESTINATIONS = ["00-inbox", "10-areas", "20-projects", "30-resources", "40-archive"]
 STANDARD_SECTIONS = ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
+REMEMBER_TYPES = ["decision", "convention", "learning", "constraint", "taxonomy"]
 
 
 def core_template_warning(note_type: str) -> str:
@@ -638,6 +639,131 @@ def collect_markdown_files(path: Path) -> list[Path]:
     return sorted(file for file in path.rglob("*.md") if file.is_file())
 
 
+def parse_list_field(value: str) -> list[str]:
+    if value.startswith("[") and value.endswith("]"):
+        return [clean_inline(item.strip().strip("\"'")) for item in value[1:-1].split(",") if clean_inline(item.strip().strip("\"'"))]
+    return []
+
+
+def resolve_existing_path(raw_path: str, vault: Path | None = None) -> Path:
+    path = Path(raw_path)
+    if path.exists():
+        return path.resolve()
+    if vault:
+        candidate = (vault / raw_path).resolve()
+        if candidate.exists():
+            return candidate
+    raise ValueError(f"Ruta inválida: {raw_path}")
+
+
+def command_index(args: argparse.Namespace) -> int:
+    try:
+        vault = resolve_optional_vault_path(args.vault_path)
+        target = resolve_existing_path(args.path, vault)
+        files = collect_markdown_files(target)
+        titles: dict[str, list[str]] = {}
+        by_type: dict[str, int] = {}
+        lines = [f"# Index ({now_date()})", "", f"- Path: {target}", f"- Files: {len(files)}", "", "## Notes", ""]
+        for file in files:
+            text = file.read_text(encoding="utf-8")
+            fm = parse_frontmatter(text)
+            title = fm.get("title", "").strip('"') or extract_title(text)
+            note_type = fm.get("type", "note")
+            by_type[note_type] = by_type.get(note_type, 0) + 1
+            rel = str(file.relative_to(target)) if target.is_dir() else file.name
+            lines.append(f"- [[{title}]] ({rel})")
+            titles.setdefault(title.lower(), []).append(rel)
+        duplicates = {k: v for k, v in titles.items() if len(v) > 1}
+        output = Path(args.output) if args.output else unique_path(PREVIEW_DIR / f"{now_date()}-index.md")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+        emit({"ok": True, "command": "index", "input_path": str(target), "output_path": str(output), "totals": {"files": len(files), "by_type": by_type}, "duplicates": duplicates, "warnings": [], "errors": [], "message": f"Index generado: {output}"}, args.json)
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "index", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
+
+
+def command_timeline(args: argparse.Namespace) -> int:
+    try:
+        target_raw = args.path or args.from_path
+        if not target_raw:
+            raise ValueError("timeline requiere --path o --from.")
+        target = resolve_existing_path(target_raw)
+        files = collect_markdown_files(target)
+        events: list[dict[str, Any]] = []
+        for file in files:
+            text = file.read_text(encoding="utf-8")
+            fm = parse_frontmatter(text)
+            event_date = fm.get("updated") or fm.get("created")
+            inferred = False
+            if not event_date:
+                name_match = re.match(r"^(\d{4}-\d{2}-\d{2})-", file.name)
+                if name_match:
+                    event_date = name_match.group(1)
+                    inferred = True
+                else:
+                    event_date = "pending"
+                    inferred = True
+            events.append({"date": event_date, "inferred": inferred, "source": str(file), "title": fm.get("title", "").strip('"') or extract_title(text)})
+        events.sort(key=lambda item: item["date"])
+        lines = [f"# Timeline ({now_date()})", ""]
+        for event in events:
+            mark = " (inferred)" if event["inferred"] else ""
+            lines.append(f"- {event['date']}{mark}: {event['title']} -> {event['source']}")
+        output = Path(args.output) if args.output else unique_path(PREVIEW_DIR / f"{now_date()}-timeline.md")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+        emit({"ok": True, "command": "timeline", "input_path": str(target), "output_path": str(output), "events": events, "warnings": [], "errors": [], "message": f"Timeline generado: {output}"}, args.json)
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "timeline", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
+
+
+def command_drift_detection(args: argparse.Namespace) -> int:
+    try:
+        target = resolve_existing_path(args.path)
+        files = collect_markdown_files(target)
+        issues: dict[str, list[dict[str, Any]]] = {"duplicate_tags": [], "invalid_frontmatter": [], "broken_links": [], "orphan_notes": [], "redundant_aliases": []}
+        title_index: dict[str, str] = {}
+        for file in files:
+            text = file.read_text(encoding="utf-8")
+            fm = parse_frontmatter(text)
+            validation = validate_text(text, file.name)
+            if not validation["ok"]:
+                issues["invalid_frontmatter"].append({"file": str(file), "errors": validation["errors"]})
+            tags = parse_list_field(fm.get("tags", ""))
+            lowered_tags = [tag.lower() for tag in tags]
+            if len(set(lowered_tags)) != len(lowered_tags):
+                issues["duplicate_tags"].append({"file": str(file), "tags": tags})
+            aliases = parse_list_field(fm.get("aliases", ""))
+            if len(set(alias.lower() for alias in aliases)) != len(aliases):
+                issues["redundant_aliases"].append({"file": str(file), "aliases": aliases})
+            title = fm.get("title", "").strip('"') or extract_title(text)
+            title_index[title.lower()] = str(file)
+        for file in files:
+            text = file.read_text(encoding="utf-8")
+            links = re.findall(r"\[\[([^\]]+)\]\]", text)
+            if not links:
+                issues["orphan_notes"].append({"file": str(file)})
+            for link in links:
+                if clean_inline(link).lower() not in title_index:
+                    issues["broken_links"].append({"file": str(file), "link": link})
+        output = Path(args.output) if args.output else unique_path(PREVIEW_DIR / f"{now_date()}-drift-report.md")
+        json_output = output.with_suffix(".json")
+        lines = [f"# Drift Report ({now_date()})", ""]
+        for key, values in issues.items():
+            lines.extend([f"## {key}", f"- count: {len(values)}", ""])
+        output.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+        json_output.write_text(json.dumps({"ok": True, "command": "drift-detection", "issues": issues}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        emit({"ok": True, "command": "drift-detection", "input_path": str(target), "report_paths": {"md": str(output), "json": str(json_output)}, "issues": issues, "warnings": [], "errors": [], "message": "Drift detection completado."}, args.json)
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "drift-detection", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
+
+
 def command_capture(args: argparse.Namespace) -> int:
     try:
         if not args.text and not args.input:
@@ -857,6 +983,10 @@ def command_capabilities(args: argparse.Namespace) -> int:
             "review",
             "link",
             "summarize",
+            "index",
+            "timeline",
+            "drift-detection",
+            "archive",
         ],
         "types": VALID_TYPES,
         "statuses": VALID_STATUSES,
@@ -1163,7 +1293,16 @@ def command_template_apply(args: argparse.Namespace) -> int:
 
 
 def command_remember(args: argparse.Namespace) -> int:
-    summary = clean_inline(args.summary)
+    if args.summary:
+        summary = clean_inline(args.summary)
+        source_ref = "summary"
+    elif args.input:
+        input_path = Path(args.input)
+        summary = summarize(strip_existing_frontmatter(input_path.read_text(encoding="utf-8")))
+        source_ref = str(input_path)
+    else:
+        summary = ""
+        source_ref = ""
     if not summary:
         emit({"ok": False, "message": "La memoria requiere --summary no vacío.", "errors": ["summary vacío"]}, args.json)
         return 2
@@ -1186,7 +1325,7 @@ def command_remember(args: argparse.Namespace) -> int:
             "status": "active",
             "created": now_date(),
             "updated": now_date(),
-            "tags": ["mi-memoria", "memory"],
+            "tags": ["mi-memoria", "memory", args.type],
             "aliases": [],
             "source": "remember",
         }
@@ -1197,6 +1336,10 @@ def command_remember(args: argparse.Namespace) -> int:
                 "Memoria": summary,
             },
         )
+        if "## Contexto" in content:
+            content = content.replace("## Contexto\n\n", f"## Contexto\n\n- Tipo: {args.type}\n- Fuente: {source_ref}\n\n")
+        elif "## Memoria" in content:
+            content = content.replace("## Memoria\n\n", f"## Memoria\n\n- Tipo: {args.type}\n- Fuente: {source_ref}\n\n")
         output.write_text(content, encoding="utf-8")
         log_operation(f"remember.{args.scope}", "summary", str(output), "ok")
         emit(
@@ -1209,6 +1352,8 @@ def command_remember(args: argparse.Namespace) -> int:
                     "source": template["source"],
                     "path": template["path"],
                 },
+                "memory_type": args.type,
+                "source_ref": source_ref,
                 "warnings": template["warnings"],
                 "message": f"Memoria guardada: {output}",
             },
@@ -1217,6 +1362,33 @@ def command_remember(args: argparse.Namespace) -> int:
         return 0
     except Exception as exc:
         emit({"ok": False, "scope": args.scope, "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
+
+
+def command_archive(args: argparse.Namespace) -> int:
+    try:
+        vault = resolve_vault_path(args.vault_path)
+        source = resolve_existing_path(args.input, vault)
+        ensure_inside(vault, source)
+        if source.suffix != ".md" or not source.is_file():
+            raise ValueError("archive requiere un archivo .md existente.")
+        destination = vault / "40-archive" / source.name
+        ensure_inside(vault, destination)
+        if destination.exists():
+            raise ValueError(f"Destino ya existe: {destination}")
+        text = source.read_text(encoding="utf-8")
+        links = re.findall(r"\[\[([^\]]+)\]\]", text)
+        plan = {"source": str(source), "destination": str(destination), "links_detected": len(links), "warnings": ["Archivar no borra contenido; mueve la nota a 40-archive."]}
+        if args.preview:
+            emit({"ok": True, "command": "archive", "mode": "preview", "plan": plan, "message": "Plan de archivado generado."}, args.json)
+            return 0
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(source), str(destination))
+        log_operation("archive.apply", str(source), str(destination), "ok")
+        emit({"ok": True, "command": "archive", "mode": "apply", "plan": plan, "output_path": str(destination), "message": f"Nota archivada: {destination}"}, args.json)
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "archive", "errors": [str(exc)], "warnings": [], "message": str(exc)}, args.json)
         return 2
 
 
@@ -1327,6 +1499,26 @@ def build_parser() -> argparse.ArgumentParser:
     summarize_cmd.add_argument("--json", action="store_true")
     summarize_cmd.set_defaults(func=command_summarize)
 
+    index_cmd = sub.add_parser("index")
+    index_cmd.add_argument("--path", required=True)
+    index_cmd.add_argument("--output")
+    index_cmd.add_argument("--vault-path")
+    index_cmd.add_argument("--json", action="store_true")
+    index_cmd.set_defaults(func=command_index)
+
+    timeline_cmd = sub.add_parser("timeline")
+    timeline_cmd.add_argument("--path")
+    timeline_cmd.add_argument("--from", dest="from_path")
+    timeline_cmd.add_argument("--output")
+    timeline_cmd.add_argument("--json", action="store_true")
+    timeline_cmd.set_defaults(func=command_timeline)
+
+    drift_cmd = sub.add_parser("drift-detection")
+    drift_cmd.add_argument("--path", required=True)
+    drift_cmd.add_argument("--output")
+    drift_cmd.add_argument("--json", action="store_true")
+    drift_cmd.set_defaults(func=command_drift_detection)
+
     run = sub.add_parser("run")
     run.add_argument("skill")
     run.add_argument("--input")
@@ -1376,7 +1568,9 @@ def build_parser() -> argparse.ArgumentParser:
     template_apply.set_defaults(func=command_template_apply)
 
     remember = sub.add_parser("remember")
-    remember.add_argument("--summary", required=True)
+    remember.add_argument("--summary")
+    remember.add_argument("--input")
+    remember.add_argument("--type", choices=REMEMBER_TYPES, default="learning")
     remember.add_argument("--scope", choices=["vault", "runtime"], default="vault")
     remember.add_argument("--vault-path")
     remember.add_argument("--json", action="store_true")
@@ -1387,6 +1581,15 @@ def build_parser() -> argparse.ArgumentParser:
     apply.add_argument("--vault-path")
     apply.add_argument("--json", action="store_true")
     apply.set_defaults(func=command_apply)
+
+    archive = sub.add_parser("archive")
+    archive.add_argument("--input", required=True)
+    archive_mode = archive.add_mutually_exclusive_group(required=True)
+    archive_mode.add_argument("--preview", action="store_true")
+    archive_mode.add_argument("--apply", action="store_true")
+    archive.add_argument("--vault-path")
+    archive.add_argument("--json", action="store_true")
+    archive.set_defaults(func=command_archive)
 
     return parser
 
