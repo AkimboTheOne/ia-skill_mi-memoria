@@ -62,11 +62,15 @@ Activación CLI:
 - `timeline`: construir historial temporal trazable.
 - `drift-detection`: detectar deriva estructural/taxonómica con reportes.
 - `archive`: archivar en `40-archive` mediante `preview/apply` explícito.
+- `query`: consulta contextual local con evidencia trazable.
+- `context-build`: construir paquetes de contexto reutilizables y acotados.
+- `session`: gestionar sesiones temporales de trabajo con cierre controlado.
 - `template`: listar, revisar, generar, validar y aplicar plantillas Markdown.
 - `apply`: copiar previews válidos desde el workspace del runtime o del vault hacia un destino final.
 - `ask`: activar normalización simple desde lenguaje natural; usa `vault/workspace/preview` si hay vault configurado.
 - `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
 - `capabilities`: exponer el contrato operativo actual del CLI.
+- `capabilities`: exponer también versión y madurez operativa.
 - `upgrade`: actualizar el runtime del skill con `git pull --ff-only` acotado a este repo.
 
 ## Capacidades planeadas

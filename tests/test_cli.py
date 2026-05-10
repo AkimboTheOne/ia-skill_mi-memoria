@@ -53,10 +53,51 @@ class MiMemoriaCliTests(unittest.TestCase):
         result = self.run_cli("capabilities", "--json")
         data = json.loads(result.stdout)
         self.assertTrue(data["ok"])
+        self.assertEqual(data["version"], "0.3.0")
+        self.assertEqual(data["maturity"], "p3-stable")
         self.assertIn("normalize", data["skills"])
         self.assertIn("memory", data["types"])
-        self.assertIn("template", data["commands"])
+        self.assertIn("query", data["commands"])
+        self.assertIn("context-build", data["commands"])
+        self.assertIn("session", data["commands"])
         self.assertIn("upgrade", data["commands"])
+
+    def test_query_returns_uncertainty_when_no_evidence(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "a.md"
+            note.write_text("# Nota local\n\ncontenido simple", encoding="utf-8")
+            result = self.run_cli("query", "zzzz-not-found", "--path", str(tmp), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["command"], "query")
+            self.assertEqual(data["results"], [])
+            self.assertTrue(data["uncertainty"])
+
+    def test_context_build_generates_artifacts(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "a.md"
+            note.write_text("# Taxonomía\n\nRegla de proyecto.", encoding="utf-8")
+            result = self.run_cli("context-build", "--path", str(tmp), "--topic", "taxonomía", "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            artifacts = data["artifacts"]
+            self.assertTrue(Path(artifacts["md"]).exists())
+            self.assertTrue(Path(artifacts["json"]).exists())
+            self.assertTrue(Path(artifacts["source_map"]).exists())
+
+    def test_session_lifecycle(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "work.md"
+            note.write_text("# Trabajo\n\nPendiente de resumen.", encoding="utf-8")
+            self.run_cli("session", "start", "--name", "arquitectura-mi-memoria", "--json")
+            self.run_cli("session", "add", "--name", "arquitectura-mi-memoria", "--input", str(note), "--json")
+            ctx = self.run_cli("session", "context", "--name", "arquitectura-mi-memoria", "--json")
+            ctx_data = json.loads(ctx.stdout)
+            self.assertTrue(ctx_data["ok"])
+            close = self.run_cli("session", "close", "--name", "arquitectura-mi-memoria", "--remember", "--json")
+            close_data = json.loads(close.stdout)
+            self.assertTrue(close_data["ok"])
+            self.assertFalse(close_data["memory_persisted"])
 
     def test_upgrade_invokes_scoped_git_pull(self) -> None:
         calls: list[list[str]] = []
