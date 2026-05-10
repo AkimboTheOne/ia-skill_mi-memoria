@@ -613,6 +613,60 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertTrue(Path(data["output_path"]).exists())
             self.assertEqual(len(data["sources"]), 1)
 
+    def test_index_generates_report_without_mutation(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "2026-01-01-a.md"
+            note.write_text("# Nota A\n\nContenido.", encoding="utf-8")
+            result = self.run_cli("index", "--path", str(tmp), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertTrue(Path(data["output_path"]).exists())
+            self.assertTrue(note.exists())
+
+    def test_timeline_generates_events(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "2026-01-01-evento.md"
+            note.write_text("# Evento\n\nContenido.", encoding="utf-8")
+            result = self.run_cli("timeline", "--path", str(tmp), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertTrue(data["events"])
+
+    def test_drift_detection_generates_md_and_json(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "2026-01-01-drift.md"
+            note.write_text("# Drift\n\n[[Inexistente]]", encoding="utf-8")
+            result = self.run_cli("drift-detection", "--path", str(tmp), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertTrue(Path(data["report_paths"]["md"]).exists())
+            self.assertTrue(Path(data["report_paths"]["json"]).exists())
+
+    def test_remember_plus_accepts_type_and_input(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            source = Path(tmp) / "source.md"
+            source.write_text("# Decision\n\nSe adopta proceso.", encoding="utf-8")
+            result = self.run_cli("remember", "--input", str(source), "--type", "decision", "--vault-path", str(vault), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["memory_type"], "decision")
+
+    def test_archive_preview_and_apply(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            source = vault / "30-resources" / "2026-01-01-note.md"
+            source.write_text("# Nota\n\nContenido.", encoding="utf-8")
+            preview = self.run_cli("archive", "--input", str(source), "--preview", "--vault-path", str(vault), "--json")
+            preview_data = json.loads(preview.stdout)
+            self.assertTrue(preview_data["ok"])
+            self.assertTrue(source.exists())
+            applied = self.run_cli("archive", "--input", str(source), "--apply", "--vault-path", str(vault), "--json")
+            applied_data = json.loads(applied.stdout)
+            self.assertTrue(applied_data["ok"])
+            self.assertFalse(source.exists())
+            self.assertTrue((vault / "40-archive" / "2026-01-01-note.md").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

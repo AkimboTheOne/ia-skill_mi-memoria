@@ -65,7 +65,11 @@ En v0.1 el runtime expone:
 - `summarize`: sintetiza nota/carpeta con trazabilidad de fuentes.
 - `normalize`: normaliza Markdown libre hacia una nota Obsidian consistente.
 - `validate`: valida frontmatter, secciones mínimas y nombre de archivo.
-- `remember`: registra memoria curada y resumida en `memory/` del vault por defecto.
+- `remember`: registra memoria curada y resumida en `memory/` del vault por defecto (`remember+` con `--type`).
+- `index`: construye índices navegables y reportes de duplicados sin mutar notas.
+- `timeline`: construye línea de tiempo trazable con fechas explícitas o inferidas.
+- `drift-detection`: detecta deriva estructural/taxonómica y emite reportes `.md` + `.json`.
+- `archive`: ejecuta archivado gobernado en `40-archive/` con `--preview|--apply`.
 - `template`: lista, muestra, genera, valida y aplica plantillas Markdown.
 - `apply`: aplica un preview validado desde el workspace del runtime o del vault hacia un destino final del vault.
 - `ask`: detecta intenciones simples de normalización desde lenguaje natural.
@@ -88,12 +92,17 @@ El objetivo futuro es generar planes o reportes de alineación documental que di
 ./bin/mi-memoria review --path workspace/inbox --json
 ./bin/mi-memoria link --input workspace/inbox/2026-05-08-idea.md --preview --json
 ./bin/mi-memoria summarize --path workspace/inbox --json
+./bin/mi-memoria index --path workspace/inbox --json
+./bin/mi-memoria timeline --path workspace/inbox --json
+./bin/mi-memoria drift-detection --path workspace/inbox --json
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/mi-memoria-vault
 ./bin/mi-memoria validate --input workspace/preview/2026-05-08-nota.md
 ./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview
 ./bin/mi-memoria apply --input workspace/preview/2026-05-08-nota.md --vault-path /path/to/mi-memoria-vault
 ./bin/mi-memoria remember --summary "Se adopta Python estándar para v0.1." --vault-path /path/to/mi-memoria-vault
+./bin/mi-memoria remember --type decision --summary "Se archiva por política explícita." --vault-path /path/to/mi-memoria-vault
+./bin/mi-memoria archive --input 30-resources/2026-05-10-nota.md --preview --vault-path /path/to/mi-memoria-vault
 ./bin/mi-memoria upgrade --json
 ```
 
