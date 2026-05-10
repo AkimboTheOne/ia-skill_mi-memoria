@@ -26,6 +26,11 @@ Activación CLI:
 
 ```bash
 ./bin/mi-memoria capabilities --json
+./bin/mi-memoria capture --text "Idea rápida"
+./bin/mi-memoria classify --input workspace/inbox/2026-05-10-idea.md --json
+./bin/mi-memoria review --path workspace/inbox --json
+./bin/mi-memoria link --input workspace/inbox/2026-05-10-idea.md --preview --json
+./bin/mi-memoria summarize --path workspace/inbox --json
 ./bin/mi-memoria ask "Normaliza esta nota sobre arquitectura"
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/vault
@@ -40,6 +45,11 @@ Activación CLI:
 
 ## Capacidades actuales
 
+- `capture`: capturar ideas/notas rápidas en `workspace/inbox`.
+- `classify`: proponer destino taxonómico sin mover automáticamente.
+- `review`: revisar calidad estructural y emitir reportes verificables.
+- `link`: sugerir wikilinks sin persistir enlaces automáticamente.
+- `summarize`: sintetizar nota/carpeta con fuentes trazables.
 - `normalize`: producir notas Markdown con frontmatter y secciones estándar.
 - `validate`: verificar estructura mínima de notas.
 - `remember`: guardar memoria curada, explícita y resumida en el vault por defecto.
@@ -69,3 +79,22 @@ Activaciones como `/mi-memoria review-docs`, `/mem review-docs`, `/mi-memoria al
 - Usar `remember --scope runtime` solo para memoria operacional del skill.
 - No presentar capacidades planeadas como disponibles.
 - No usar `upgrade` para escribir en el vault ni ejecutar comandos arbitrarios.
+
+## Flujo recomendado P1
+
+Flujo operativo por defecto:
+
+1. `capture` para ingresar ideas en `workspace/inbox`.
+2. `classify` para proponer destino (`00/10/20/30/40`) sin mover.
+3. `review` para validar estructura y calidad antes de consolidar.
+4. `link` para sugerir relaciones internas no persistentes.
+5. `summarize` para síntesis trazable.
+6. `run normalize --preview` para estandarizar nota.
+7. `apply` o `run normalize --write` solo con intención explícita.
+
+Reglas de decisión:
+
+- Si hay ambigüedad material en clasificación, preferir alternativas explícitas.
+- Si no hay vault configurado, operar en `runtime/workspace/*`.
+- Si hay vault configurado, usar `vault/workspace/*` para staging visible.
+- No persistir cambios semánticos automáticos en el vault final sin `apply`/`--write`.
