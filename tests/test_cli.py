@@ -53,7 +53,7 @@ class MiMemoriaCliTests(unittest.TestCase):
         result = self.run_cli("capabilities", "--json")
         data = json.loads(result.stdout)
         self.assertTrue(data["ok"])
-        self.assertEqual(data["version"], "0.4.1")
+        self.assertEqual(data["version"], "0.4.2")
         self.assertEqual(data["maturity"], "p4-stable")
         self.assertIn("normalize", data["skills"])
         self.assertIn("daily", data["types"])

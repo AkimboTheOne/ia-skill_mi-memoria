@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased (pre-p5-madurez)
+## Unreleased
+
+## v0.4.2
+
+- Manifiesto machine-first canónico movido a `skill-manifest.json` (raíz) con espejo idéntico en `docs/skill-manifest.json` para compatibilidad transitoria.
+- Runtime de `capabilities` ahora resuelve manifiesto con prioridad en raíz y fallback compatible a `docs/`.
+- Coherencia reforzada por pruebas: metadata por comando completa y paridad estructural exacta entre manifiesto canónico y espejo.
+- Documentación alineada (`README.md`, `SKILL.md`, `docs/usage.md`, `docs/architecture.md`, `AGENTS.md`) con reglas de contextualización para agentes.
+- Memoria de iteración pre‑P5 añadida en `docs/memoria-iteracion-pre-p5.md`.
+- Charter baseline histórico reubicado desde raíz a `docs/roadmap/mi-memoria-charter-baseline-v0.1.md`.
+
+## pre-p5-madurez (histórico de trabajo)
 
 - `template sync` agrega sincronización segura de plantillas CORE hacia `vault/templates` (solo faltantes, sin sobrescritura) con reportes `.md` + `.json`.
 - `capabilities --json` incorpora metadata por comando orientada a carga rápida de contexto por LLM.

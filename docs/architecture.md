@@ -33,6 +33,11 @@ El runtime opera sobre el vault, nunca dentro del vault. La escritura final al v
 
 La metadata machine-first para agentes/LLM se mantiene de forma canónica en `skill-manifest.json` (raíz), con espejo transitorio en `docs/skill-manifest.json`, y se valida contra `capabilities --json` mediante pruebas automáticas.
 
+Orden de contextualización recomendado para agentes:
+1. Cargar `skill-manifest.json` (raíz) para contrato de comandos y metadata.
+2. Usar `docs/skill-manifest.json` solo como fallback de compatibilidad.
+3. Explorar módulos Python únicamente cuando el manifiesto no alcance para resolver la tarea.
+
 ## Baseline v0.1
 
 - Python estándar.

@@ -9,6 +9,11 @@ description: Use this runtime when the user wants to organize, normalize, valida
 
 Usa este runtime cuando el usuario quiera organizar, normalizar, validar o recordar conocimiento Markdown para un vault Obsidian externo.
 
+Contextualización para agentes (obligatoria):
+- Primero cargar `skill-manifest.json` en la raíz para entender comandos, contratos y metadata (`command_metadata`) sin explorar el código.
+- Usar `docs/skill-manifest.json` solo como fallback de compatibilidad si el canónico no está disponible.
+- Recurrir a lectura de módulos Python solo cuando el manifiesto no alcance para resolver la tarea.
+
 Activaciones naturales:
 
 - "Organiza esta nota."
