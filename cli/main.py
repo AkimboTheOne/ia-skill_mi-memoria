@@ -40,6 +40,7 @@ from cli.commands.template_commands import (
     handle_template_sync,
     handle_template_validate,
 )
+from cli.core.paths import ensure_inside, resolve_existing_path, resolve_optional_vault_path, resolve_vault_path
 from cli.infra.git_tools import run_git_command as infra_run_git_command
 from cli.infra.telemetry import append_operation_logs
 from cli.services.template_sync import sync_templates_safe
@@ -598,30 +599,6 @@ def unique_path(path: Path) -> Path:
         index += 1
 
 
-def resolve_vault_path(vault_path: str | None) -> Path:
-    raw = vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH")
-    if not raw:
-        raise ValueError("Falta vault. Usa --vault-path o MI_MEMORIA_VAULT_PATH.")
-    vault = Path(raw).expanduser().resolve()
-    if not vault.exists() or not vault.is_dir():
-        raise ValueError(f"Vault inválido: {vault}")
-    return vault
-
-
-def resolve_optional_vault_path(vault_path: str | None = None) -> Path | None:
-    raw = vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH")
-    if not raw:
-        return None
-    return resolve_vault_path(raw)
-
-
-def ensure_inside(base: Path, target: Path) -> None:
-    base_resolved = base.resolve()
-    target_resolved = target.resolve()
-    if base_resolved != target_resolved and base_resolved not in target_resolved.parents:
-        raise ValueError(f"Destino fuera del vault permitido: {target}")
-
-
 def run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
     # Keep wrapper in main for backwards-compatible test patching.
     return infra_run_git_command(args)
@@ -648,17 +625,6 @@ def parse_list_field(value: str) -> list[str]:
     if value.startswith("[") and value.endswith("]"):
         return [clean_inline(item.strip().strip("\"'")) for item in value[1:-1].split(",") if clean_inline(item.strip().strip("\"'"))]
     return []
-
-
-def resolve_existing_path(raw_path: str, vault: Path | None = None) -> Path:
-    path = Path(raw_path)
-    if path.exists():
-        return path.resolve()
-    if vault:
-        candidate = (vault / raw_path).resolve()
-        if candidate.exists():
-            return candidate
-    raise ValueError(f"Ruta inválida: {raw_path}")
 
 
 def resolve_capture_target(target: str | None, vault: Path | None) -> Path:
