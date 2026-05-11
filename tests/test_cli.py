@@ -53,13 +53,20 @@ class MiMemoriaCliTests(unittest.TestCase):
         result = self.run_cli("capabilities", "--json")
         data = json.loads(result.stdout)
         self.assertTrue(data["ok"])
-        self.assertEqual(data["version"], "0.3.0")
-        self.assertEqual(data["maturity"], "p3-stable")
+        self.assertEqual(data["version"], "0.4.1")
+        self.assertEqual(data["maturity"], "p4-stable")
         self.assertIn("normalize", data["skills"])
+        self.assertIn("daily", data["types"])
         self.assertIn("memory", data["types"])
         self.assertIn("query", data["commands"])
         self.assertIn("context-build", data["commands"])
         self.assertIn("session", data["commands"])
+        self.assertIn("daily", data["commands"])
+        self.assertIn("decision", data["commands"])
+        self.assertIn("curate", data["commands"])
+        self.assertIn("publish", data["commands"])
+        self.assertIn("decision_statuses", data)
+        self.assertIn("capture_kinds", data)
         self.assertIn("upgrade", data["commands"])
 
     def test_query_returns_uncertainty_when_no_evidence(self) -> None:
@@ -612,6 +619,118 @@ class MiMemoriaCliTests(unittest.TestCase):
         self.addCleanup(lambda path=output: path.exists() and path.unlink())
         self.assertTrue(output.exists())
         self.assertEqual(output.parent.resolve(), (ROOT / "workspace" / "inbox").resolve())
+
+    def test_capture_supports_type_and_to_workspace(self) -> None:
+        with runtime_temp_dir() as tmp:
+            target = ROOT / "workspace" / "processing"
+            result = self.run_cli("capture", "--text", "Decision de arquitectura", "--type", "decision", "--to", str(target), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["capture_type"], "decision")
+            output = Path(data["output_path"])
+            self.addCleanup(lambda path=output: path.exists() and path.unlink())
+            self.assertTrue(output.exists())
+            self.assertEqual(output.parent.resolve(), target.resolve())
+            self.assertEqual(data["capture_kind"], "decision")
+
+    def test_capture_supports_roadmap_kind_mapping(self) -> None:
+        result = self.run_cli("capture", "--text", "Referencia util", "--kind", "reference", "--json")
+        data = json.loads(result.stdout)
+        self.assertTrue(data["ok"])
+        output = Path(data["output_path"])
+        self.addCleanup(lambda path=output: path.exists() and path.unlink())
+        self.assertEqual(data["capture_kind"], "reference")
+        self.assertEqual(data["capture_type"], "resource")
+        self.assertTrue(output.exists())
+
+    def test_capture_rejects_invalid_to_outside_workspace(self) -> None:
+        result = self.run_cli("capture", "--text", "Idea", "--to", "/tmp", "--json", check=False)
+        data = json.loads(result.stdout)
+        self.assertFalse(data["ok"])
+        self.assertIn("workspace", data["message"])
+
+    def test_daily_create_append_and_summary(self) -> None:
+        expected = ROOT / "workspace" / "daily" / "2026-05-10-daily.md"
+        if expected.exists():
+            expected.unlink()
+        created = self.run_cli("daily", "--date", "2026-05-10", "--json")
+        created_data = json.loads(created.stdout)
+        self.assertTrue(created_data["ok"])
+        self.assertTrue(created_data["created"])
+        path = Path(created_data["output_path"])
+        self.addCleanup(lambda target=path: target.exists() and target.unlink())
+        appended = self.run_cli("daily", "--date", "2026-05-10", "--append", "nota rapida", "--summary", "--json")
+        appended_data = json.loads(appended.stdout)
+        self.assertTrue(appended_data["ok"])
+        self.assertFalse(appended_data["created"])
+        self.assertTrue(appended_data["summary"])
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("nota rapida", content)
+
+    def test_daily_rejects_invalid_date(self) -> None:
+        result = self.run_cli("daily", "--date", "2026-99-01", "--json", check=False)
+        data = json.loads(result.stdout)
+        self.assertFalse(data["ok"])
+
+    def test_decision_new_and_list(self) -> None:
+        created = self.run_cli("decision", "new", "--title", "Separar runtime y vault", "--decision-status", "accepted", "--json")
+        created_data = json.loads(created.stdout)
+        self.assertTrue(created_data["ok"])
+        self.assertEqual(created_data["decision_status"], "accepted")
+        output = Path(created_data["output_path"])
+        self.addCleanup(lambda path=output: path.exists() and path.unlink())
+        content = output.read_text(encoding="utf-8")
+        self.assertIn("## Contexto", content)
+        self.assertIn("decision_status: accepted", content)
+        listed = self.run_cli("decision", "list", "--json")
+        listed_data = json.loads(listed.stdout)
+        self.assertTrue(listed_data["ok"])
+        self.assertGreaterEqual(listed_data["count"], 1)
+        self.assertTrue(any(item.get("decision_status") in cli_main.VALID_DECISION_STATUSES for item in listed_data["items"]))
+
+    def test_curate_generates_reports_without_mutation(self) -> None:
+        with runtime_temp_dir() as tmp:
+            source = tmp / "note.md"
+            original = "# Nota\n\ncontenido breve"
+            source.write_text(original, encoding="utf-8")
+            result = self.run_cli("curate", "--path", str(tmp), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertTrue(Path(data["report_paths"]["md"]).exists())
+            self.assertTrue(Path(data["report_paths"]["json"]).exists())
+            self.assertEqual(source.read_text(encoding="utf-8"), original)
+
+    def test_publish_exports_manifest_without_mutation(self) -> None:
+        with runtime_temp_dir() as tmp:
+            source = tmp / "note.md"
+            source.write_text("---\ntitle: \"n\"\ntype: note\nstatus: draft\ncreated: 2026-01-01\nupdated: 2026-01-01\ntags: []\naliases: []\nsource: test\n---\n\n# Nota\n\n## Resumen\n", encoding="utf-8")
+            output = tmp / "pack"
+            result = self.run_cli("publish", "--path", str(tmp), "--output", str(output), "--strip-private", "--format", "markdown", "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertTrue((output / "README.md").exists())
+            self.assertTrue((output / "manifest.json").exists())
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["format"], "markdown")
+            exported_files = list((output / "files").glob("*.md"))
+            self.assertTrue(exported_files)
+            exported = exported_files[0].read_text(encoding="utf-8")
+            self.assertNotIn("source:", exported)
+            self.assertIn("source: test", source.read_text(encoding="utf-8"))
+
+    def test_publish_from_context_pack_json(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "note.md"
+            note.write_text("# Nota\n\nContenido de contexto.", encoding="utf-8")
+            context_pack = tmp / "context-pack.json"
+            context_pack.write_text(json.dumps({"sources": [{"file": str(note)}]}, ensure_ascii=False), encoding="utf-8")
+            output = tmp / "pack"
+            result = self.run_cli("publish", "--context-pack", str(context_pack), "--output", str(output), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertTrue((output / "manifest.json").exists())
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["context_pack"], str(context_pack))
 
     def test_classify_returns_destination_without_moving(self) -> None:
         with runtime_temp_dir() as tmp:

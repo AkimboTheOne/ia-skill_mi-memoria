@@ -23,8 +23,10 @@ LOG_FILE = ROOT / "logs" / "operations.log"
 CORE_TEMPLATE_DIR = ROOT / "skills" / "core" / "templates"
 
 REQUIRED_FIELDS = ["title", "type", "status", "created", "updated", "tags"]
-VALID_TYPES = ["note", "decision", "project", "resource", "area", "memory"]
+VALID_TYPES = ["note", "decision", "project", "resource", "area", "memory", "daily"]
 VALID_STATUSES = ["draft", "review", "active", "archived"]
+VALID_DECISION_STATUSES = ["proposed", "accepted", "superseded", "deprecated"]
+VALID_CAPTURE_KINDS = ["idea", "reference", "note", "decision", "project", "resource", "area", "memory", "daily"]
 VALID_DESTINATIONS = ["00-inbox", "10-areas", "20-projects", "30-resources", "40-archive"]
 STANDARD_SECTIONS = ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
 REMEMBER_TYPES = ["decision", "convention", "learning", "constraint", "taxonomy"]
@@ -44,6 +46,23 @@ def now_date() -> str:
 
 def now_stamp() -> str:
     return datetime.now().replace(microsecond=0).isoformat()
+
+
+def parse_iso_date(raw: str) -> str:
+    parsed = datetime.strptime(raw, "%Y-%m-%d")
+    return parsed.date().isoformat()
+
+
+def capture_kind_to_type(raw_kind: str | None) -> tuple[str | None, str | None]:
+    if not raw_kind:
+        return None, None
+    kind = clean_inline(raw_kind).lower()
+    mapping = {"idea": "note", "reference": "resource"}
+    if kind in mapping:
+        return kind, mapping[kind]
+    if kind in VALID_TYPES:
+        return kind, kind
+    raise ValueError(f"Tipo de captura inválido: {raw_kind}")
 
 
 def ensure_runtime_dirs() -> None:
@@ -657,6 +676,52 @@ def resolve_existing_path(raw_path: str, vault: Path | None = None) -> Path:
     raise ValueError(f"Ruta inválida: {raw_path}")
 
 
+def resolve_capture_target(target: str | None, vault: Path | None) -> Path:
+    if not target:
+        if vault:
+            ensure_vault_workspace_dirs(vault)
+            return (vault / VAULT_WORKSPACE / "inbox").resolve()
+        return (WORKSPACE / "inbox").resolve()
+    raw = Path(target)
+    if raw.is_absolute():
+        if vault:
+            vault_workspace_root = (vault / VAULT_WORKSPACE).resolve()
+            resolved = raw.resolve()
+            if resolved == vault_workspace_root or vault_workspace_root in resolved.parents:
+                return resolved
+        workspace_root = WORKSPACE.resolve()
+        resolved = raw.resolve()
+        if resolved == workspace_root or workspace_root in resolved.parents:
+            return resolved
+        raise ValueError("capture --to solo permite rutas dentro de workspace/ o vault/workspace/.")
+    if vault and target.startswith("workspace/"):
+        destination = (vault / target).resolve()
+        ensure_inside(vault, destination)
+        return destination
+    destination = (ROOT / target).resolve()
+    workspace_root = WORKSPACE.resolve()
+    if destination == workspace_root or workspace_root in destination.parents:
+        return destination
+    raise ValueError("capture --to solo permite rutas relativas dentro de workspace/.")
+
+
+def remove_private_frontmatter(text: str) -> str:
+    if not text.startswith("---\n"):
+        return text
+    end = text.find("\n---", 4)
+    if end == -1:
+        return text
+    raw = text[4:end].strip()
+    filtered: list[str] = []
+    for line in raw.splitlines():
+        key = line.split(":", 1)[0].strip().lower()
+        if key in {"source", "aliases"}:
+            continue
+        filtered.append(line)
+    body = text[end + 4 :].lstrip("\n")
+    return "---\n" + "\n".join(filtered).strip() + "\n---\n\n" + body
+
+
 def safe_read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
@@ -787,7 +852,19 @@ def command_drift_detection(args: argparse.Namespace) -> int:
             lines.extend([f"## {key}", f"- count: {len(values)}", ""])
         output.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
         json_output.write_text(json.dumps({"ok": True, "command": "drift-detection", "issues": issues}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        emit({"ok": True, "command": "drift-detection", "input_path": str(target), "report_paths": {"md": str(output), "json": str(json_output)}, "issues": issues, "warnings": [], "errors": [], "message": "Drift detection completado."}, args.json)
+        emit(
+            {
+                "ok": True,
+                "command": "drift-detection",
+                "input_path": str(target),
+                "report_paths": {"md": str(output), "json": str(json_output)},
+                "issues": issues,
+                "warnings": [],
+                "errors": [],
+                "message": "Drift detection ejecutado correctamente; revisar issues reportados.",
+            },
+            args.json,
+        )
         return 0
     except Exception as exc:
         emit({"ok": False, "command": "drift-detection", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
@@ -802,11 +879,25 @@ def command_capture(args: argparse.Namespace) -> int:
         vault = resolve_optional_vault_path(args.vault_path)
         text, source = read_text_input(args.input, args.text)
         normalized = normalize_markdown(text, source, vault)
-        if vault:
-            ensure_vault_workspace_dirs(vault)
-            output = unique_path(vault / VAULT_WORKSPACE / "inbox" / normalized["filename"])
-        else:
-            output = unique_path(WORKSPACE / "inbox" / normalized["filename"])
+        kind_input = args.kind or args.type or normalized["metadata"]["type"]
+        capture_kind, mapped_type = capture_kind_to_type(kind_input)
+        capture_type = mapped_type or normalized["metadata"]["type"]
+        normalized["metadata"]["type"] = capture_type
+        normalized["content"] = render_template(
+            resolve_template("note", vault)["content"],
+            normalized["metadata"],
+            {
+                "Resumen": summarize(strip_existing_frontmatter(text)),
+                "Desarrollo": strip_existing_frontmatter(text) or "Contenido pendiente.",
+                "Relaciones": "- Sin relaciones sugeridas.",
+                "Pendientes": "- Revisar y consolidar esta captura.",
+            },
+        )
+        target_dir = resolve_capture_target(args.to, vault)
+        if vault and (vault / VAULT_WORKSPACE).resolve() in target_dir.parents:
+            ensure_inside(vault, target_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        output = unique_path(target_dir / normalized["filename"])
         output.write_text(normalized["content"], encoding="utf-8")
         log_operation("capture", source, str(output), "ok")
         emit(
@@ -816,6 +907,8 @@ def command_capture(args: argparse.Namespace) -> int:
                 "mode": "preview",
                 "output_path": str(output),
                 "classification": normalized["classification"],
+                "capture_kind": capture_kind or capture_type,
+                "capture_type": capture_type,
                 "warnings": normalized["warnings"] + normalized["validation"]["warnings"],
                 "errors": normalized["validation"]["errors"],
                 "message": f"Captura creada: {output}",
@@ -825,6 +918,380 @@ def command_capture(args: argparse.Namespace) -> int:
         return 0 if normalized["validation"]["ok"] else 1
     except Exception as exc:
         emit({"ok": False, "command": "capture", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
+
+
+def command_daily(args: argparse.Namespace) -> int:
+    try:
+        ensure_runtime_dirs()
+        vault = resolve_optional_vault_path(args.vault_path)
+        day = parse_iso_date(args.date) if args.date else now_date()
+        if vault:
+            ensure_vault_workspace_dirs(vault)
+            daily_dir = vault / VAULT_WORKSPACE / "daily"
+            ensure_inside(vault, daily_dir)
+        else:
+            daily_dir = WORKSPACE / "daily"
+        daily_dir.mkdir(parents=True, exist_ok=True)
+        daily_path = daily_dir / f"{day}-daily.md"
+        created = not daily_path.exists()
+        if created:
+            metadata = {
+                "title": f"Daily {day}",
+                "type": "daily",
+                "status": "draft",
+                "created": day,
+                "updated": day,
+                "tags": ["mi-memoria", "daily"],
+                "aliases": [],
+                "source": "daily",
+            }
+            content = render_template(
+                resolve_template("daily" if (CORE_TEMPLATE_DIR / "daily.md").exists() else "note", vault)["content"],
+                metadata,
+                {
+                    "Resumen": "Resumen pendiente.",
+                    "Desarrollo": "",
+                    "Relaciones": "- Sin relaciones sugeridas.",
+                    "Pendientes": "- Revisar y curar al final del día.",
+                },
+            )
+            daily_path.write_text(content, encoding="utf-8")
+        if args.append:
+            stamp = datetime.now().strftime("%H:%M")
+            existing = daily_path.read_text(encoding="utf-8")
+            entry = f"- [{stamp}] {args.append.strip()}"
+            if "## Desarrollo" in existing:
+                existing = existing.replace("## Desarrollo\n\n", f"## Desarrollo\n\n{entry}\n", 1)
+            else:
+                existing = existing.rstrip() + f"\n\n## Desarrollo\n\n{entry}\n"
+            daily_path.write_text(existing, encoding="utf-8")
+        summary_text = ""
+        if args.summary:
+            summary_text = summarize(strip_existing_frontmatter(daily_path.read_text(encoding="utf-8")))
+        emit(
+            {
+                "ok": True,
+                "command": "daily",
+                "output_path": str(daily_path),
+                "created": created,
+                "date": day,
+                "summary": summary_text,
+                "mode": "preview",
+                "warnings": [],
+                "errors": [],
+                "message": f"Daily disponible: {daily_path}",
+            },
+            args.json,
+        )
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "daily", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
+
+
+def command_decision(args: argparse.Namespace) -> int:
+    try:
+        vault = resolve_optional_vault_path(args.vault_path)
+        ensure_runtime_dirs()
+        if vault:
+            ensure_vault_workspace_dirs(vault)
+            decisions_dir = vault / VAULT_WORKSPACE / "decisions"
+            ensure_inside(vault, decisions_dir)
+        else:
+            decisions_dir = WORKSPACE / "decisions"
+        decisions_dir.mkdir(parents=True, exist_ok=True)
+        if args.decision_command == "new":
+            title = clean_inline(args.title)
+            if not title:
+                raise ValueError("decision new requiere --title.")
+            today = now_date()
+            filename = f"{today}-decision-{slugify(title)}.md"
+            destination = unique_path(decisions_dir / filename)
+            metadata = {
+                "title": title,
+                "type": "decision",
+                "status": "draft",
+                "created": today,
+                "updated": today,
+                "tags": ["mi-memoria", "decision"],
+                "aliases": [],
+                "source": "decision.new",
+            }
+            decision_status = args.decision_status or "proposed"
+            if decision_status not in VALID_DECISION_STATUSES:
+                raise ValueError(f"decision_status inválido: {decision_status}")
+            sections = {
+                "Contexto": "Contexto pendiente.",
+                "Opciones consideradas": "- Opción A\n- Opción B",
+                "Decisión tomada": "Decisión pendiente.",
+                "Consecuencias": "- Pendiente.",
+                "Referencias": "- Pendiente.",
+            }
+            template_path = CORE_TEMPLATE_DIR / "decision.md"
+            content = render_template(
+                resolve_template("decision" if template_path.exists() else "note", vault)["content"],
+                metadata,
+                sections,
+            )
+            content = content.replace("\n---\n\n", f"\ndecision_status: {decision_status}\n---\n\n", 1)
+            destination.write_text(content, encoding="utf-8")
+            emit(
+                {
+                    "ok": True,
+                    "command": "decision",
+                    "action": "new",
+                    "output_path": str(destination),
+                    "mode": "preview",
+                    "decision_status": decision_status,
+                    "warnings": [],
+                    "errors": [],
+                    "message": f"Decisión creada: {destination}",
+                },
+                args.json,
+            )
+            return 0
+        if args.decision_command == "from-session":
+            session_path = session_file(args.session)
+            if not session_path.exists():
+                raise ValueError("Sesión no encontrada. Ejecuta session start.")
+            payload = json.loads(session_path.read_text(encoding="utf-8"))
+            title = f"decision-desde-{slugify(args.session)}"
+            today = now_date()
+            decision_status = args.decision_status or "proposed"
+            if decision_status not in VALID_DECISION_STATUSES:
+                raise ValueError(f"decision_status inválido: {decision_status}")
+            destination = unique_path(decisions_dir / f"{today}-{title}.md")
+            files = [Path(item) for item in payload.get("active_files", []) if Path(item).exists()]
+            context_lines = [f"- {item}" for item in files] or ["- Sin archivos activos."]
+            content = (
+                f"---\n"
+                f"title: {json.dumps('Decisión desde sesión: ' + args.session, ensure_ascii=False)}\n"
+                f"type: decision\n"
+                f"status: draft\n"
+                f"created: {today}\n"
+                f"updated: {today}\n"
+                f"decision_status: {decision_status}\n"
+                f"tags: [\"mi-memoria\", \"decision\", \"session\"]\n"
+                f"aliases: []\n"
+                f"source: {json.dumps(str(session_path), ensure_ascii=False)}\n"
+                f"---\n\n"
+                f"# Decisión desde sesión: {args.session}\n\n"
+                f"## Contexto\n\n" + "\n".join(context_lines) + "\n\n"
+                f"## Opciones consideradas\n\n- Pendiente.\n\n"
+                f"## Decisión tomada\n\nPendiente.\n\n"
+                f"## Consecuencias\n\n- Pendiente.\n\n"
+                f"## Referencias\n\n- {session_path}\n"
+            )
+            destination.write_text(content, encoding="utf-8")
+            emit(
+                {
+                    "ok": True,
+                    "command": "decision",
+                    "action": "from-session",
+                    "output_path": str(destination),
+                    "session": str(session_path),
+                    "decision_status": decision_status,
+                    "warnings": [],
+                    "errors": [],
+                    "message": f"Decisión creada desde sesión: {destination}",
+                },
+                args.json,
+            )
+            return 0
+        if args.decision_command == "list":
+            items = sorted(decisions_dir.glob("*.md"))
+            resolved_items: list[dict[str, str]] = []
+            for item in items:
+                fm = parse_frontmatter(safe_read_text(item))
+                resolved_items.append(
+                    {
+                        "path": str(item),
+                        "title": fm.get("title", "").strip('"') or item.stem,
+                        "status": fm.get("status", ""),
+                        "decision_status": fm.get("decision_status", "proposed"),
+                    }
+                )
+            emit(
+                {
+                    "ok": True,
+                    "command": "decision",
+                    "action": "list",
+                    "count": len(items),
+                    "items": resolved_items,
+                    "warnings": [],
+                    "errors": [],
+                    "message": f"Decisiones listadas: {len(items)}",
+                },
+                args.json,
+            )
+            return 0
+        raise ValueError(f"Subcomando no soportado: {args.decision_command}")
+    except Exception as exc:
+        emit({"ok": False, "command": "decision", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
+
+
+def command_curate(args: argparse.Namespace) -> int:
+    try:
+        vault = resolve_optional_vault_path(args.vault_path)
+        target = resolve_existing_path(args.path, vault)
+        files = collect_markdown_files(target)
+        issues: dict[str, list[dict[str, Any]]] = {
+            "weak_notes": [],
+            "potential_duplicates": [],
+            "redundant_tags": [],
+            "orphan_notes": [],
+            "stale_notes": [],
+        }
+        title_map: dict[str, Path] = {}
+        now = datetime.now().date()
+        for file in files:
+            text = safe_read_text(file)
+            fm = parse_frontmatter(text)
+            body = strip_existing_frontmatter(text)
+            title = (fm.get("title", "").strip('"') or extract_title(body)).strip().lower()
+            if len(body.split()) < 25:
+                issues["weak_notes"].append({"file": str(file), "reason": "contenido breve"})
+            if title in title_map:
+                issues["potential_duplicates"].append({"file": str(file), "duplicate_of": str(title_map[title])})
+            else:
+                title_map[title] = file
+            tags = parse_list_field(fm.get("tags", ""))
+            lowered = [item.lower() for item in tags]
+            if len(set(lowered)) != len(lowered):
+                issues["redundant_tags"].append({"file": str(file), "tags": tags})
+            links = re.findall(r"\[\[([^\]]+)\]\]", text)
+            if not links:
+                issues["orphan_notes"].append({"file": str(file)})
+            updated = fm.get("updated", "").strip()
+            if updated:
+                try:
+                    age = (now - datetime.strptime(updated, "%Y-%m-%d").date()).days
+                    if age > 180:
+                        issues["stale_notes"].append({"file": str(file), "days": age})
+                except ValueError:
+                    pass
+        report_md = Path(args.report) if args.report else unique_path(PREVIEW_DIR / f"{now_date()}-curation-report.md")
+        report_json = report_md.with_suffix(".json")
+        report_md.parent.mkdir(parents=True, exist_ok=True)
+        lines = [f"# Curation Report ({now_date()})", "", f"- Path: {target}", f"- Files: {len(files)}", ""]
+        for key, value in issues.items():
+            lines.extend([f"## {key}", f"- count: {len(value)}", ""])
+        report_md.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+        payload = {
+            "ok": True,
+            "command": "curate",
+            "mode": "preview",
+            "input_path": str(target),
+            "report_paths": {"md": str(report_md), "json": str(report_json)},
+            "issues": issues,
+            "warnings": [],
+            "errors": [],
+            "message": "Curate ejecutado correctamente; plan generado sin mutaciones.",
+        }
+        report_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        emit(payload, args.json)
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "curate", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
+
+
+def command_publish(args: argparse.Namespace) -> int:
+    try:
+        vault = resolve_optional_vault_path(args.vault_path)
+        if args.format != "markdown":
+            raise ValueError("publish soporta únicamente --format markdown en P4.")
+        selected_from_context: list[Path] = []
+        source_ref = ""
+        if args.context_pack:
+            context_pack = resolve_existing_path(args.context_pack, vault)
+            source_ref = str(context_pack)
+            if context_pack.suffix == ".json":
+                payload = json.loads(safe_read_text(context_pack))
+                for item in payload.get("sources", []):
+                    raw = item.get("file") if isinstance(item, dict) else ""
+                    if raw and Path(raw).exists():
+                        selected_from_context.append(Path(raw).resolve())
+            elif context_pack.suffix == ".md":
+                selected_from_context.append(context_pack.resolve())
+                sibling_json = context_pack.with_suffix(".json")
+                if sibling_json.exists():
+                    payload = json.loads(safe_read_text(sibling_json))
+                    for item in payload.get("sources", []):
+                        raw = item.get("file") if isinstance(item, dict) else ""
+                        if raw and Path(raw).exists():
+                            selected_from_context.append(Path(raw).resolve())
+            else:
+                raise ValueError("--context-pack debe ser un archivo .md o .json.")
+        target = resolve_existing_path(args.path, vault) if args.path else Path(".").resolve()
+        files = collect_markdown_files(target) if args.path else []
+        if selected_from_context:
+            deduped: list[Path] = []
+            seen: set[str] = set()
+            for file in selected_from_context:
+                key = str(file)
+                if key not in seen and file.exists() and file.suffix == ".md":
+                    seen.add(key)
+                    deduped.append(file)
+            files = deduped
+        if not files:
+            raise ValueError("publish no encontró archivos markdown para exportar.")
+        output_root = Path(args.output) if args.output else unique_path(WORKSPACE / "exports" / f"{now_date()}-publish-pack")
+        files_dir = output_root / "files"
+        files_dir.mkdir(parents=True, exist_ok=True)
+        copied: list[dict[str, str]] = []
+        for file in files:
+            destination = files_dir / file.name
+            content = safe_read_text(file)
+            if args.strip_private:
+                content = remove_private_frontmatter(content)
+            destination.write_text(content, encoding="utf-8")
+            copied.append({"source": str(file), "output": str(destination)})
+        manifest = {
+            "created": now_stamp(),
+            "source_path": str(target),
+            "context_pack": source_ref,
+            "format": args.format,
+            "files": copied,
+            "strip_private": bool(args.strip_private),
+        }
+        (output_root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        readme = [
+            f"# Publish Pack ({now_date()})",
+            "",
+            f"- Source: {target}",
+            f"- Context pack: {source_ref or '(none)'}",
+            f"- Format: {args.format}",
+            f"- Files: {len(copied)}",
+            f"- Strip private metadata: {'yes' if args.strip_private else 'no'}",
+            "",
+            "Este paquete es una exportación controlada sin mutar los archivos fuente.",
+        ]
+        (output_root / "README.md").write_text("\n".join(readme).strip() + "\n", encoding="utf-8")
+        emit(
+            {
+                "ok": True,
+                "command": "publish",
+                "mode": "export",
+                "input_path": str(target),
+                "output_path": str(output_root),
+                "artifacts": {
+                    "readme": str(output_root / "README.md"),
+                    "manifest": str(output_root / "manifest.json"),
+                    "files_dir": str(files_dir),
+                },
+                "plan": {"format": args.format, "context_pack": source_ref or None},
+                "warnings": [],
+                "errors": [],
+                "message": f"Paquete publicado en: {output_root}",
+            },
+            args.json,
+        )
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "publish", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
         return 2
 
 
@@ -915,7 +1382,7 @@ def command_review(args: argparse.Namespace) -> int:
                 "report_paths": {"md": str(md_report), "json": str(json_report)},
                 "warnings": [],
                 "errors": [],
-                "message": "Review completado.",
+                "message": "Review ejecutado correctamente; revisar issues de calidad.",
             },
             args.json,
         )
@@ -1141,8 +1608,8 @@ def command_capabilities(args: argparse.Namespace) -> int:
     data = {
         "ok": True,
         "name": "mi-memoria",
-        "version": "0.3.0",
-        "maturity": "p3-stable",
+        "version": "0.4.1",
+        "maturity": "p4-stable",
         "skills": ["normalize"],
         "commands": [
             "ask",
@@ -1156,6 +1623,8 @@ def command_capabilities(args: argparse.Namespace) -> int:
             "template",
             "upgrade",
             "capture",
+            "daily",
+            "decision",
             "classify",
             "review",
             "link",
@@ -1163,12 +1632,16 @@ def command_capabilities(args: argparse.Namespace) -> int:
             "index",
             "timeline",
             "drift-detection",
+            "curate",
+            "publish",
             "archive",
             "query",
             "context-build",
             "session",
         ],
         "types": VALID_TYPES,
+        "decision_statuses": VALID_DECISION_STATUSES,
+        "capture_kinds": VALID_CAPTURE_KINDS,
         "statuses": VALID_STATUSES,
         "destinations": VALID_DESTINATIONS,
     }
@@ -1651,9 +2124,42 @@ def build_parser() -> argparse.ArgumentParser:
     capture = sub.add_parser("capture")
     capture.add_argument("--text")
     capture.add_argument("--input")
+    capture.add_argument("--type")
+    capture.add_argument("--kind")
+    capture.add_argument("--to")
     capture.add_argument("--vault-path")
     capture.add_argument("--json", action="store_true")
     capture.set_defaults(func=command_capture)
+
+    daily = sub.add_parser("daily")
+    daily.add_argument("--date")
+    daily.add_argument("--append")
+    daily.add_argument("--summary", action="store_true")
+    daily.add_argument("--vault-path")
+    daily.add_argument("--json", action="store_true")
+    daily.set_defaults(func=command_daily)
+
+    decision = sub.add_parser("decision")
+    decision_sub = decision.add_subparsers(dest="decision_command", required=True)
+
+    decision_new = decision_sub.add_parser("new")
+    decision_new.add_argument("--title", required=True)
+    decision_new.add_argument("--decision-status", choices=VALID_DECISION_STATUSES, default="proposed")
+    decision_new.add_argument("--vault-path")
+    decision_new.add_argument("--json", action="store_true")
+    decision_new.set_defaults(func=command_decision)
+
+    decision_from_session = decision_sub.add_parser("from-session")
+    decision_from_session.add_argument("--session", required=True)
+    decision_from_session.add_argument("--decision-status", choices=VALID_DECISION_STATUSES, default="proposed")
+    decision_from_session.add_argument("--vault-path")
+    decision_from_session.add_argument("--json", action="store_true")
+    decision_from_session.set_defaults(func=command_decision)
+
+    decision_list = decision_sub.add_parser("list")
+    decision_list.add_argument("--vault-path")
+    decision_list.add_argument("--json", action="store_true")
+    decision_list.set_defaults(func=command_decision)
 
     classify_cmd = sub.add_parser("classify")
     classify_cmd.add_argument("--input", required=True)
@@ -1740,6 +2246,23 @@ def build_parser() -> argparse.ArgumentParser:
     drift_cmd.add_argument("--output")
     drift_cmd.add_argument("--json", action="store_true")
     drift_cmd.set_defaults(func=command_drift_detection)
+
+    curate = sub.add_parser("curate")
+    curate.add_argument("--path", required=True)
+    curate.add_argument("--report")
+    curate.add_argument("--vault-path")
+    curate.add_argument("--json", action="store_true")
+    curate.set_defaults(func=command_curate)
+
+    publish = sub.add_parser("publish")
+    publish.add_argument("--path")
+    publish.add_argument("--context-pack")
+    publish.add_argument("--format", default="markdown")
+    publish.add_argument("--output")
+    publish.add_argument("--strip-private", action="store_true")
+    publish.add_argument("--vault-path")
+    publish.add_argument("--json", action="store_true")
+    publish.set_defaults(func=command_publish)
 
     run = sub.add_parser("run")
     run.add_argument("skill")

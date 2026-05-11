@@ -4,10 +4,28 @@
 
 ```bash
 ./bin/mi-memoria capture --text "Idea rápida"
+./bin/mi-memoria capture --kind idea --text "Idea rápida curada"
+./bin/mi-memoria capture --type decision --text "Separar runtime y vault"
+./bin/mi-memoria capture --to workspace/processing --text "Entrada de curaduría"
 ./bin/mi-memoria capture --input note.md --json
 ```
 
 `capture` guarda en `workspace/inbox` del runtime por defecto, o en `vault/workspace/inbox` si hay vault configurado.
+
+## Daily
+
+```bash
+./bin/mi-memoria daily --json
+./bin/mi-memoria daily --date 2026-05-10 --append "nota rápida" --summary --json
+```
+
+## Decision
+
+```bash
+./bin/mi-memoria decision new --title "Separar runtime y vault" --decision-status accepted --json
+./bin/mi-memoria decision from-session --session arquitectura-mi-memoria --decision-status proposed --json
+./bin/mi-memoria decision list --json
+```
 
 ## Clasificación (sin mover)
 
@@ -64,6 +82,29 @@ Extrae fechas de frontmatter y marca como `inferred` cuando se deducen.
 ```
 
 Genera `drift-report.md` y `drift-report.json` con deriva verificable.
+
+## Curate
+
+```bash
+./bin/mi-memoria curate --path workspace/inbox --json
+./bin/mi-memoria curate --path workspace/inbox --report workspace/preview/curation-report.md --json
+```
+
+`curate` produce plan/reporte, no ejecuta mutaciones masivas.
+
+## Publish
+
+```bash
+./bin/mi-memoria publish --path workspace/inbox --output workspace/exports/pack --format markdown --json
+./bin/mi-memoria publish --path workspace/inbox --output workspace/exports/pack --strip-private --format markdown --json
+./bin/mi-memoria publish --context-pack workspace/exports/context-pack.json --output workspace/exports/pack-context --json
+```
+
+`publish` exporta paquetes sin modificar archivos fuente.
+
+## Estado P5
+
+P5 no está ejecutada en esta versión. No existen comandos `serve`, endpoints HTTPS ni bridge MCP activos en el runtime.
 
 ## Query contextual
 
