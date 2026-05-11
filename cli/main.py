@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from cli.commands.capabilities_commands import handle_capabilities
+from cli.commands.normalize_commands import handle_run_normalize, handle_validate
 from cli.commands.runtime_commands import handle_ask, handle_context, handle_explain
 from cli.commands.upgrade_commands import handle_upgrade
 from cli.commands.template_commands import (
@@ -1618,78 +1619,29 @@ def command_ask(args: argparse.Namespace) -> int:
 
 
 def command_run(args: argparse.Namespace) -> int:
-    if args.skill != "normalize":
-        emit({"ok": False, "message": f"Skill no soportado: {args.skill}", "errors": ["Solo normalize existe en v0.1."]}, args.json)
-        return 2
-    if args.preview and args.write:
-        emit({"ok": False, "message": "Usa solo uno: --preview o --write.", "errors": ["Modo ambiguo."]}, args.json)
-        return 2
-    if not args.preview and not args.write:
-        emit({"ok": False, "message": "Debes usar --preview o --write.", "errors": ["Modo de escritura no especificado."]}, args.json)
-        return 2
-    try:
-        ensure_runtime_dirs()
-        if args.preview:
-            text, source = read_text_input(args.input)
-            vault = resolve_optional_vault_path(args.vault_path)
-            normalized = normalize_markdown(text, source, vault)
-            if vault:
-                ensure_vault_workspace_dirs(vault)
-                output = unique_path(vault / VAULT_PREVIEW_DIR / normalized["filename"])
-            else:
-                output = unique_path(PREVIEW_DIR / normalized["filename"])
-            proposed = Path(normalized["classification"]) / normalized["filename"]
-            mode = "preview"
-        else:
-            vault = resolve_vault_path(args.vault_path)
-            text, source = read_text_input(args.input)
-            normalized = normalize_markdown(text, source, vault)
-            output = unique_path(vault / normalized["classification"] / normalized["filename"])
-            ensure_inside(vault, output)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            proposed = output.relative_to(vault)
-            mode = "write"
-        output.write_text(normalized["content"], encoding="utf-8")
-        log_operation(f"normalize.{mode}", source, str(output), "ok")
-        data = {
-            "ok": True,
-            "command": "run normalize",
-            "mode": mode,
-            "input": source,
-            "output_path": str(output),
-            "proposed_vault_path": str(proposed),
-            "filename": normalized["filename"],
-            "classification": normalized["classification"],
-            "template": normalized["template"],
-            "warnings": normalized["warnings"] + normalized["validation"]["warnings"],
-            "validation": normalized["validation"],
-            "message": f"{mode.capitalize()} generado: {output}",
-        }
-        emit(data, args.json)
-        return 0 if normalized["validation"]["ok"] else 1
-    except Exception as exc:
-        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_run_normalize(
+        args=args,
+        ensure_runtime_dirs=ensure_runtime_dirs,
+        read_text_input=read_text_input,
+        resolve_optional_vault_path=resolve_optional_vault_path,
+        normalize_markdown=normalize_markdown,
+        ensure_vault_workspace_dirs=ensure_vault_workspace_dirs,
+        unique_path=unique_path,
+        vault_preview_dir=VAULT_PREVIEW_DIR,
+        runtime_preview_dir=PREVIEW_DIR,
+        resolve_vault_path=resolve_vault_path,
+        ensure_inside=ensure_inside,
+        log_operation=log_operation,
+        emit=emit,
+    )
 
 
 def command_validate(args: argparse.Namespace) -> int:
-    try:
-        path = Path(args.input)
-        text = path.read_text(encoding="utf-8")
-        result = validate_text(text, path.name)
-        data = {
-            "ok": result["ok"],
-            "input": str(path),
-            "errors": result["errors"],
-            "warnings": result["warnings"],
-            "checks": result["checks"],
-            "message": "Validación correcta." if result["ok"] else "Validación fallida.",
-        }
-        emit(data, args.json)
-        return 0 if result["ok"] else 1
-    except Exception as exc:
-        emit({"ok": False, "input": args.input, "errors": [str(exc)], "warnings": [], "checks": {}, "message": str(exc)}, args.json)
-        return 2
+    return handle_validate(
+        args=args,
+        validate_text=validate_text,
+        emit=emit,
+    )
 
 
 def command_template_list(args: argparse.Namespace) -> int:
