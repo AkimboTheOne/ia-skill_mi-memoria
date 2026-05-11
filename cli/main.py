@@ -13,11 +13,11 @@ from pathlib import Path
 from typing import Any
 
 from cli.core.metadata import build_capabilities_payload
+from cli.commands.upgrade_commands import handle_upgrade
 from cli.commands.template_commands import handle_template_sync
 from cli.infra.git_tools import run_git_command as infra_run_git_command
 from cli.infra.telemetry import append_operation_logs
 from cli.services.template_sync import sync_templates_safe
-from cli.services.upgrade_service import execute_upgrade
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -603,9 +603,12 @@ def run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def command_upgrade(args: argparse.Namespace) -> int:
-    exit_code, payload = execute_upgrade(runtime_root=ROOT, runner=run_git_command)
-    emit(payload, args.json)
-    return exit_code
+    return handle_upgrade(
+        args=args,
+        runtime_root=ROOT,
+        run_git_command=run_git_command,
+        emit=emit,
+    )
 
 
 def collect_markdown_files(path: Path) -> list[Path]:
