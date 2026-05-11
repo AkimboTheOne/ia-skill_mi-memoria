@@ -26,7 +26,9 @@ Activación CLI:
 
 ```bash
 ./bin/mi-memoria capabilities --json
-./bin/mi-memoria capture --text "Idea rápida"
+./bin/mi-memoria capture --kind idea --text "Idea rápida"
+./bin/mi-memoria daily --append "Nota rápida" --json
+./bin/mi-memoria decision new --title "Separar runtime y vault" --decision-status accepted --json
 ./bin/mi-memoria classify --input workspace/inbox/2026-05-10-idea.md --json
 ./bin/mi-memoria review --path workspace/inbox --json
 ./bin/mi-memoria link --input workspace/inbox/2026-05-10-idea.md --preview --json
@@ -34,6 +36,8 @@ Activación CLI:
 ./bin/mi-memoria index --path workspace/inbox --json
 ./bin/mi-memoria timeline --path workspace/inbox --json
 ./bin/mi-memoria drift-detection --path workspace/inbox --json
+./bin/mi-memoria curate --path workspace/inbox --json
+./bin/mi-memoria publish --path workspace/inbox --output workspace/exports/pack --format markdown --json
 ./bin/mi-memoria ask "Normaliza esta nota sobre arquitectura"
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/vault
@@ -50,7 +54,9 @@ Activación CLI:
 
 ## Capacidades actuales
 
-- `capture`: capturar ideas/notas rápidas en `workspace/inbox`.
+- `capture`: capturar ideas/notas rápidas en `workspace/inbox` con `--kind`/`--type`.
+- `daily`: crear y mantener notas diarias minimalistas.
+- `decision`: registrar decisiones trazables con plantilla estructurada y `decision_status`.
 - `classify`: proponer destino taxonómico sin mover automáticamente.
 - `review`: revisar calidad estructural y emitir reportes verificables.
 - `link`: sugerir wikilinks sin persistir enlaces automáticamente.
@@ -61,6 +67,8 @@ Activación CLI:
 - `index`: construir índices navegables con reporte de duplicados.
 - `timeline`: construir historial temporal trazable.
 - `drift-detection`: detectar deriva estructural/taxonómica con reportes.
+- `curate`: producir planes de curaduría sin mutación automática.
+- `publish`: exportar subconjuntos de conocimiento sin modificar fuentes; soporta `--format markdown` y `--context-pack`.
 - `archive`: archivar en `40-archive` mediante `preview/apply` explícito.
 - `query`: consulta contextual local con evidencia trazable.
 - `context-build`: construir paquetes de contexto reutilizables y acotados.
@@ -78,6 +86,10 @@ Activación CLI:
 La revisión documental y alineación contra master-plan es una capacidad propuesta, no implementada en v0.1.
 
 Activaciones como `/mi-memoria review-docs`, `/mem review-docs`, `/mi-memoria align-readme`, `/mem align-readme`, `/mi-memoria review-master-plan` o `/mem review-master-plan` deben tratarse como roadmap hasta que existan en el CLI, estén documentadas como actuales y tengan pruebas.
+
+P5 (MCP/HTTPS/proveedores externos) permanece como roadmap. No debe anunciarse como implementada mientras no existan comandos y pruebas explícitas.
+
+La gobernanza de release/tag/backport para consumo por integraciones está definida en `AGENTS.md` y debe respetarse en toda entrega de versión.
 
 ## Reglas
 

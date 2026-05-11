@@ -55,6 +55,8 @@
 - `v0.1.x`: baseline y consolidación inicial.
 - `v0.2.x`: P2 estabilizado.
 - `v0.3.x`: P3 (inteligencia contextual local).
+- `v0.4.x`: P4 estabilizado + hardening previo a P5.
+- `v0.5.x`: P5 interoperabilidad controlada (solo cuando se habilite explícitamente).
 - Campos obligatorios en cada release: `cli/__init__.py::__version__`, `capabilities.version`, `CHANGELOG.md`, `README.md` y `SKILL.md` deben quedar alineados.
 - Una fase solo puede marcarse `stable` con comandos implementados, pruebas en verde y documentación alineada.
 - Capacidades no implementadas deben quedar explícitamente como `roadmap` o `propuesta`.
@@ -63,4 +65,25 @@
 - `p2-stable`
 - `p3-in-progress`
 - `p3-stable`
+- `p4-stable`
+- `p5-in-progress`
+- `p5-stable`
 - `capabilities --json` debe exponer siempre la madurez operativa vigente.
+
+## Política de Release, Tag y Backport
+
+- Objetivo: mantener trazabilidad de versiones para integraciones que fijan una versión concreta.
+- Flujo obligatorio por release:
+1. ejecutar `make test` y validar verde;
+2. alinear `cli/__init__.py::__version__`, `capabilities.version`, `CHANGELOG.md`, `README.md` y `SKILL.md`;
+3. crear `git commit` de release;
+4. hacer `git push` (sync de rama);
+5. abrir PR de release;
+6. al cerrar la release, crear tag semántico `vX.Y.Z`;
+7. crear o actualizar rama histórica `release/vX.Y.Z` como backport de referencia.
+
+- Reglas de compatibilidad y seguridad de histórico:
+- prohibido retag de una versión ya publicada;
+- prohibido force-push en ramas `release/*`;
+- hotfixes solo con incremento de patch y tag nuevo;
+- `release/vX.Y.Z` debe permanecer inmutable salvo hotfixes explícitos y auditables.

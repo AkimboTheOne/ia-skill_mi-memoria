@@ -1,8 +1,14 @@
 # mi-memoria
 
+![version](https://img.shields.io/badge/version-v0.4.1-blue)
+![maturity](https://img.shields.io/badge/maturity-p4--stable-brightgreen)
+![tests](https://img.shields.io/badge/tests-make%20test%20passing-success)
+![license](https://img.shields.io/badge/license-not%20declared-lightgrey)
+![roadmap](https://img.shields.io/badge/roadmap-P5%20deferred-orange)
+
 Runtime local de skills para operar sobre repositorios de conocimiento Markdown, separado del vault de conocimiento.
 
-`mi-memoria` v0.3 implementa baseline + P1/P2/P3:
+`mi-memoria` v0.4.1 implementa baseline + P1/P2/P3/P4 (hardening):
 
 - CLI local sin dependencias externas obligatorias.
 - Skill `normalize` para convertir texto o Markdown libre en notas Obsidian consistentes.
@@ -13,6 +19,38 @@ Runtime local de skills para operar sobre repositorios de conocimiento Markdown,
 - Generación determinista de plantillas mediante `template`.
 - Setup inicial de vault mediante `scripts/skill_setup.sh`.
 - Actualización segura del runtime mediante `upgrade`.
+
+## Activación por agente y CLI
+
+Formas de invocar el skill en flujos humanos y de agentes:
+
+1. Slash command para agentes conversacionales:
+- `/mi-memoria capture "Idea inicial"`
+- `/mem review --path workspace/inbox`
+
+2. Convención prompt-style usada en algunos coding CLIs:
+- `$mi-memoria summarize --path workspace/inbox`
+- `$mem context-build --topic "arquitectura local"`
+
+3. Contrato técnico ejecutable (canónico):
+- `./bin/mi-memoria <comando>`
+- `./bin/mi-memoria capabilities --json`
+
+4. Flujo mínimo recomendado por intención:
+- Capturar: `./bin/mi-memoria capture --kind idea --text "..." --json`
+- Validar/Clasificar: `./bin/mi-memoria classify --input workspace/inbox/<nota>.md --json`
+- Revisar: `./bin/mi-memoria review --path workspace/inbox --json`
+- Publicar: `./bin/mi-memoria publish --path workspace/inbox --format markdown --output workspace/exports/pack --json`
+
+`$mi-memoria` y `$mem` son convenciones de invocación de agentes. El contrato técnico ejecutable y verificable del repositorio sigue siendo `./bin/mi-memoria`.
+
+### Alcance del repositorio
+
+- Runtime local de conocimiento Markdown (sin dependencias externas obligatorias).
+- Separación estricta runtime/vault; el vault no contiene lógica operacional.
+- Madurez actual: `p4-stable` con hardening previo a P5.
+- P5 (MCP/HTTPS/proveedores externos) permanece diferida y no ejecutada.
+- Operaciones críticas con control explícito (`preview`, `apply`, `--write` según comando).
 
 ## Instalación del skill
 
@@ -46,7 +84,7 @@ Ubicaciones comunes según agente:
 
 Para que un agente reconozca la habilidad, el archivo `SKILL.md` debe quedar en la raíz de la carpeta del skill.
 
-## Capacidades actuales v0.3
+## Capacidades actuales v0.4.1
 
 La fuente operativa para capacidades actuales es:
 
@@ -56,9 +94,11 @@ La fuente operativa para capacidades actuales es:
 
 En conversaciones con Codex, `/mem` es alias corto de `/mi-memoria`. El binario local se mantiene como `mi-memoria`.
 
-En v0.3 el runtime expone:
+En v0.4 el runtime expone:
 
-- `capture`: captura ideas/notas rápidas en `workspace/inbox` con estructura validable.
+- `capture`: captura ideas/notas rápidas con `--kind`/`--type` y destino controlado opcional (`--to`).
+- `daily`: crea/actualiza notas diarias minimalistas con append y resumen.
+- `decision`: registra decisiones trazables (`new`, `from-session`, `list`) con `decision_status`.
 - `classify`: propone destino taxonómico (`00/10/20/30/40`) con racional y alternativas.
 - `review`: genera reportes de calidad estructural en `.md` y `.json`.
 - `link`: sugiere wikilinks candidatos sin persistir cambios automáticamente.
@@ -69,6 +109,8 @@ En v0.3 el runtime expone:
 - `index`: construye índices navegables y reportes de duplicados sin mutar notas.
 - `timeline`: construye línea de tiempo trazable con fechas explícitas o inferidas.
 - `drift-detection`: detecta deriva estructural/taxonómica y emite reportes `.md` + `.json`.
+- `curate`: propone planes de curaduría y reportes sin ejecutar cambios masivos.
+- `publish`: exporta subconjuntos de conocimiento sin mutar fuentes (`--format markdown`, `--context-pack`).
 - `archive`: ejecuta archivado gobernado en `40-archive/` con `--preview|--apply`.
 - `query`: consulta contextual local con evidencia, inferencia e incertidumbre explícitas.
 - `context-build`: construye paquetes de contexto acotados con `context-pack` y `source-map`.
@@ -87,11 +129,15 @@ La revisión documental contra master-plan está propuesta para evolución futur
 
 El objetivo futuro es generar planes o reportes de alineación documental que distingan capacidades reales, gaps, documentación obsoleta y decisiones diferidas.
 
+Nota de gobernanza de versiones y releases: ver `AGENTS.md` (sección de release, tag y backport).
+
 ## Uso rápido
 
 ```bash
 ./bin/mi-memoria capabilities --json
-./bin/mi-memoria capture --text "Idea rápida"
+./bin/mi-memoria capture --kind idea --text "Idea rápida"
+./bin/mi-memoria daily --append "Nota rápida"
+./bin/mi-memoria decision new --title "Separar runtime y vault" --decision-status accepted --json
 ./bin/mi-memoria classify --input workspace/inbox/2026-05-08-idea.md --json
 ./bin/mi-memoria review --path workspace/inbox --json
 ./bin/mi-memoria link --input workspace/inbox/2026-05-08-idea.md --preview --json
@@ -99,6 +145,9 @@ El objetivo futuro es generar planes o reportes de alineación documental que di
 ./bin/mi-memoria index --path workspace/inbox --json
 ./bin/mi-memoria timeline --path workspace/inbox --json
 ./bin/mi-memoria drift-detection --path workspace/inbox --json
+./bin/mi-memoria curate --path workspace/inbox --json
+./bin/mi-memoria publish --path workspace/inbox --output workspace/exports/pack --format markdown --json
+./bin/mi-memoria publish --context-pack workspace/exports/2026-05-10-context-pack.json --output workspace/exports/pack-context --json
 ./bin/mi-memoria run normalize --input note.md --preview
 ./bin/mi-memoria run normalize --input note.md --preview --vault-path /path/to/mi-memoria-vault
 ./bin/mi-memoria validate --input workspace/preview/2026-05-08-nota.md
@@ -125,6 +174,18 @@ Con el vault configurado, `remember` escribe por defecto en `memory/` del vault.
 Las plantillas del vault tienen prioridad. Si falta una plantilla primitiva del vault, el runtime usa la plantilla CORE de `skills/core/templates` y emite un warning recomendando restaurarla con `scripts/skill_setup.sh` o crear una plantilla propia.
 
 `template generate` crea previews en `workspace/preview/templates`. `template apply` copia esos previews a `vault/templates` solo si el destino no existe.
+
+## P5 readiness (aún no ejecutada)
+
+P5 (interoperabilidad controlada) sigue diferida. En `v0.4.1` no existe bridge MCP ni servidor HTTPS activo.
+
+Gates previos obligatorios para iniciar P5:
+
+- mantener CLI-first como contrato primario;
+- exponer solo capacidades read-only en primera etapa;
+- no ampliar permisos respecto a CLI local;
+- mantener pruebas offline completas y mocks;
+- bloquear por defecto operaciones destructivas remotas.
 
 ## Inicializar un vault
 

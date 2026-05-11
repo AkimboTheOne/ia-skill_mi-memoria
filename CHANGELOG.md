@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.4.1
+
+- Hardening de madurez P4 previo a P5 (sin ejecutar interoperabilidad).
+- `capture` agrega compatibilidad roadmap con `--kind` (`idea`, `reference`) y mapeo interno seguro a tipos canónicos.
+- `decision` incorpora `decision_status` (`proposed`, `accepted`, `superseded`, `deprecated`) sin romper `status` operacional.
+- `publish` agrega `--format markdown` y `--context-pack` para exportación acotada desde artefactos de contexto.
+- Mensajes de comandos diagnósticos (`review`, `curate`, `drift-detection`) se estandarizan para distinguir ejecución correcta vs hallazgos de calidad.
+- `capabilities --json` alinea `version=0.4.1`, mantiene `maturity=p4-stable` y expone `capture_kinds` y `decision_statuses`.
+- Documentación y memoria histórica actualizadas con estado consolidado y gates de preparación P5.
+- Doc-governance hardening: README incorpora activación por agente (`/mi-memoria`, `/mem`, `$mi-memoria`, `$mem`) y badges; AGENTS formaliza política de commit/sync/PR/tag/backport `release/vX.Y.Z`.
+
+## v0.4.0
+
+- Implementación P4 con nuevos comandos top-level: `daily`, `decision`, `curate`, `publish`.
+- `capture` evoluciona con `--type` y `--to` para captura controlada en `workspace/*` o `vault/workspace/*`.
+- `daily` crea/recupera notas diarias, permite `--append` con timestamp y `--summary` no destructivo.
+- `decision` agrega ciclo `new`, `from-session` y `list` con plantilla CORE de decisiones trazables.
+- `curate` genera plan de curaduría verificable (`.md` + `.json`) sin mutar notas fuente.
+- `publish` exporta subconjuntos a `workspace/exports/*` con `README.md`, `manifest.json` y `files/`, con limpieza opcional de metadatos privados.
+- `capabilities --json` alinea `version=0.4.0` y `maturity=p4-stable`.
+- Cobertura de pruebas ampliada para contratos y restricciones críticas de P4.
+
 ## v0.3.0
 
 - Implementación P3 con nuevos comandos top-level: `query`, `context-build`, `session`.
