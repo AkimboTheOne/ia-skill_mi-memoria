@@ -80,7 +80,7 @@ Activación CLI:
 - `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
 - `capabilities`: exponer el contrato operativo actual del CLI.
 - `capabilities`: exponer también versión y madurez operativa.
-- `capabilities`: exponer metadata por comando para carga rápida de agentes (fuente: `docs/skill-manifest.json`).
+- `capabilities`: exponer metadata por comando para carga rápida de agentes (fuente canónica: `skill-manifest.json` en raíz; espejo compatible: `docs/skill-manifest.json`).
 - `upgrade`: actualizar el runtime del skill con `git pull --ff-only` acotado a este repo.
 
 ## Capacidades planeadas

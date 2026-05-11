@@ -175,7 +175,7 @@ Las plantillas del vault tienen prioridad. Si falta una plantilla primitiva del 
 
 `template generate` crea previews en `workspace/preview/templates`. `template apply` copia esos previews a `vault/templates` solo si el destino no existe. `template sync` sincroniza faltantes CORE al vault en modo seguro y reporta diferencias sin sobrescribir.
 
-`capabilities --json` expone metadata por comando para agentes. La fuente canónica se mantiene en `docs/skill-manifest.json`.
+`capabilities --json` expone metadata por comando para agentes. La fuente canónica es `skill-manifest.json` (raíz) y se mantiene un espejo idéntico en `docs/skill-manifest.json` por compatibilidad transitoria.
 
 ## P5 readiness (aún no ejecutada)
 

@@ -65,7 +65,7 @@ VALID_DESTINATIONS = ["00-inbox", "10-areas", "20-projects", "30-resources", "40
 STANDARD_SECTIONS = ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
 REMEMBER_TYPES = ["decision", "convention", "learning", "constraint", "taxonomy"]
 SESSION_DIR = ROOT / "tmp" / "sessions"
-SKILL_MANIFEST_PATH = ROOT / "docs" / "skill-manifest.json"
+SKILL_MANIFEST_PATH = ROOT / "skill-manifest.json"
 
 
 def core_template_warning(note_type: str) -> str:

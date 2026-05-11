@@ -4,7 +4,7 @@
 
 - `template sync` agrega sincronización segura de plantillas CORE hacia `vault/templates` (solo faltantes, sin sobrescritura) con reportes `.md` + `.json`.
 - `capabilities --json` incorpora metadata por comando orientada a carga rápida de contexto por LLM.
-- Se introduce `docs/skill-manifest.json` como fuente canónica machine-first para capacidades y metadatos operacionales.
+- Se define `skill-manifest.json` (raíz) como fuente canónica machine-first para capacidades y metadatos operacionales, manteniendo `docs/skill-manifest.json` como espejo de compatibilidad.
 - Refactor modular inicial: extracción de metadata/capabilities (`cli/core/metadata.py`) y servicios de `template sync`/`upgrade` (`cli/services/*`) sin romper contratos CLI.
 - Telemetría operacional liviana: se añade `logs/operations.jsonl` en paralelo al log textual existente para trazabilidad orientada a interpretación por LLM.
 - Refactor por capa `commands`: `template sync`, `upgrade`, `capabilities` y el resto de subcomandos `template` delegan desde `cli/main.py` a handlers modulares manteniendo contratos JSON y retro-compatibilidad.
@@ -12,7 +12,7 @@
 - Refactor contextual/calidad: `session`, `query`, `context-build`, `classify`, `review`, `link` y `summarize` delegan a módulos `commands` especializados con pruebas retro-compatibles en verde.
 - Refactor productivo inicial: `capture`, `daily` y `decision` delegan en `cli/commands/production_commands.py` manteniendo contratos JSON y cobertura de pruebas existente.
 - Refactor analítico/safeguard: `index`, `timeline`, `drift-detection`, `curate`, `publish`, `remember`, `archive` y `apply` delegan en módulos `commands` dedicados.
-- Se agrega test de coherencia entre `capabilities --json` y `docs/skill-manifest.json` para asegurar metadata machine-first completa por comando.
+- Se refuerza la coherencia del manifiesto con pruebas: metadata completa por comando en `capabilities --json` y paridad estructural exacta entre `skill-manifest.json` (raíz) y `docs/skill-manifest.json` (espejo).
 
 ## v0.4.1
 

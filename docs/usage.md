@@ -188,7 +188,7 @@ Con `--vault-path` o `MI_MEMORIA_VAULT_PATH`, el preview queda en `vault/workspa
 ./bin/mi-memoria capabilities --json
 ```
 
-El manifiesto canónico de metadata por comando vive en `docs/skill-manifest.json` y se expone en `capabilities --json` para contextualización rápida de agentes.
+El manifiesto canónico de metadata por comando vive en `skill-manifest.json` (raíz) y se expone en `capabilities --json` para contextualización rápida de agentes. Se mantiene un espejo idéntico en `docs/skill-manifest.json` por transición/compatibilidad.
 
 ## Memoria
 

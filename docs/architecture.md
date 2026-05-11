@@ -31,7 +31,7 @@ El runtime opera sobre el vault, nunca dentro del vault. La escritura final al v
 - `cli/services/`: lógica reutilizable de caso de uso (`upgrade_service`, `template_sync`) desacoplada del parser.
 - `cli/infra/`: integración con runtime local (`git_tools`, `telemetry`).
 
-La metadata machine-first para agentes/LLM se mantiene en `docs/skill-manifest.json` y se valida contra `capabilities --json` mediante pruebas automáticas.
+La metadata machine-first para agentes/LLM se mantiene de forma canónica en `skill-manifest.json` (raíz), con espejo transitorio en `docs/skill-manifest.json`, y se valida contra `capabilities --json` mediante pruebas automáticas.
 
 ## Baseline v0.1
 

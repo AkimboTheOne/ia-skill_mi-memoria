@@ -39,7 +39,11 @@ RUNTIME_COMMANDS = [
 
 def load_skill_manifest(path: Path) -> dict[str, Any]:
     if not path.is_file():
-        raise ValueError(f"Manifest no encontrado: {path}")
+        fallback = path.parent / "docs" / path.name
+        if fallback.is_file():
+            path = fallback
+        else:
+            raise ValueError(f"Manifest no encontrado: {path}")
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
