@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "command": "drift-detection",
+  "issues": {
+    "duplicate_tags": [],
+    "invalid_frontmatter": [
+      {
+        "file": "/private/tmp/mi-memoria-smoke.nFYUNA/note.md",
+        "errors": [
+          "Falta frontmatter requerido: title",
+          "Falta frontmatter requerido: type",
+          "Falta frontmatter requerido: status",
+          "Falta frontmatter requerido: created",
+          "Falta frontmatter requerido: updated",
+          "Falta frontmatter requerido: tags",
+          "Falta sección requerida: Resumen",
+          "Falta sección requerida: Desarrollo",
+          "Falta sección requerida: Relaciones",
+          "Falta sección requerida: Pendientes",
+          "Nombre de archivo no cumple yyyy-mm-dd-slug.md"
+        ]
+      }
+    ],
+    "broken_links": [],
+    "orphan_notes": [
+      {
+        "file": "/private/tmp/mi-memoria-smoke.nFYUNA/note.md"
+      }
+    ],
+    "redundant_aliases": []
+  }
+}

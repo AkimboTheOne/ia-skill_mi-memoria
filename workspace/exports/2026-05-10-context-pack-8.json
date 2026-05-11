@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "command": "context-build",
+  "scope": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/tmp/tests/tmpq860spwv",
+  "topic": "taxonomía",
+  "selection_criteria": {
+    "topic": true,
+    "max_files": 10
+  },
+  "sources": [
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/tmp/tests/tmpq860spwv/a.md",
+      "title": "Taxonomía",
+      "reason": "topic-match",
+      "excerpt": "Taxonomía Regla de proyecto."
+    }
+  ],
+  "artifacts": {
+    "md": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/exports/2026-05-10-context-pack-8.md",
+    "json": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/exports/2026-05-10-context-pack-8.json",
+    "source_map": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/exports/2026-05-10-context-pack-8-source-map.json"
+  }
+}

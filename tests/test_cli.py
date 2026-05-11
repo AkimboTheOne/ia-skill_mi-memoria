@@ -68,6 +68,10 @@ class MiMemoriaCliTests(unittest.TestCase):
         self.assertIn("decision_statuses", data)
         self.assertIn("capture_kinds", data)
         self.assertIn("upgrade", data["commands"])
+        self.assertIn("template sync", data["commands"])
+        self.assertIn("llm_manifest", data)
+        self.assertIn("command_metadata", data)
+        self.assertIn("template sync", data["command_metadata"])
 
     def test_query_returns_uncertainty_when_no_evidence(self) -> None:
         with runtime_temp_dir() as tmp:
@@ -431,6 +435,27 @@ class MiMemoriaCliTests(unittest.TestCase):
             data = json.loads(result.stdout)
             self.assertFalse(data["ok"])
             self.assertIn("ya existe", data["message"])
+
+    def test_template_sync_adds_missing_templates_without_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = self.setup_vault(tmp)
+            custom = vault / "templates" / "note.md"
+            custom.write_text("# custom-template\n", encoding="utf-8")
+            memory_template = vault / "templates" / "memory.md"
+            memory_template.unlink()
+
+            result = self.run_cli("template", "sync", "--vault-path", str(vault), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["command"], "template sync")
+            self.assertEqual(data["mode"], "safe-sync")
+            self.assertTrue(memory_template.exists())
+            self.assertEqual(custom.read_text(encoding="utf-8"), "# custom-template\n")
+            self.assertIn("outdated", data)
+            self.assertTrue(any(item["name"] == "note" for item in data["outdated"]))
+            self.assertIn("artifacts", data)
+            self.assertTrue(Path(data["artifacts"]["md"]).exists())
+            self.assertTrue(Path(data["artifacts"]["json"]).exists())
 
     def test_remember_runtime_scope(self) -> None:
         result = self.run_cli(

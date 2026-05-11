@@ -44,6 +44,7 @@ Activación CLI:
 ./bin/mi-memoria validate --input note.md
 ./bin/mi-memoria template list --json
 ./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview
+./bin/mi-memoria template sync --vault-path /path/to/vault --json
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
 ./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
 ./bin/mi-memoria remember --type decision --summary "..." --vault-path /path/to/vault
@@ -79,6 +80,7 @@ Activación CLI:
 - `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
 - `capabilities`: exponer el contrato operativo actual del CLI.
 - `capabilities`: exponer también versión y madurez operativa.
+- `capabilities`: exponer metadata por comando para carga rápida de agentes (fuente: `docs/skill-manifest.json`).
 - `upgrade`: actualizar el runtime del skill con `git pull --ff-only` acotado a este repo.
 
 ## Capacidades planeadas

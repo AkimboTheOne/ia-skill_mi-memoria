@@ -1,0 +1,60 @@
+{
+  "ok": true,
+  "command": "template sync",
+  "mode": "safe-sync",
+  "vault_path": "/private/var/folders/0h/7y_j79kn27q27zhcrf4cpd7w0000gn/T/tmpd055f8_y/vault",
+  "artifacts": {
+    "md": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/preview/2026-05-10-template-sync-report-2.md",
+    "json": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/preview/2026-05-10-template-sync-report-2.json"
+  },
+  "summary": {
+    "core_templates": 5,
+    "added": 3,
+    "skipped_existing": 2,
+    "outdated_detected": 1
+  },
+  "added": [
+    {
+      "name": "daily",
+      "source": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/skills/core/templates/daily.md",
+      "destination": "/private/var/folders/0h/7y_j79kn27q27zhcrf4cpd7w0000gn/T/tmpd055f8_y/vault/templates/daily.md"
+    },
+    {
+      "name": "decision",
+      "source": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/skills/core/templates/decision.md",
+      "destination": "/private/var/folders/0h/7y_j79kn27q27zhcrf4cpd7w0000gn/T/tmpd055f8_y/vault/templates/decision.md"
+    },
+    {
+      "name": "memory",
+      "source": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/skills/core/templates/memory.md",
+      "destination": "/private/var/folders/0h/7y_j79kn27q27zhcrf4cpd7w0000gn/T/tmpd055f8_y/vault/templates/memory.md"
+    }
+  ],
+  "missing_before_sync": [
+    "daily.md",
+    "decision.md",
+    "memory.md"
+  ],
+  "skipped": [
+    {
+      "name": "log",
+      "reason": "exists"
+    },
+    {
+      "name": "note",
+      "reason": "exists"
+    }
+  ],
+  "outdated": [
+    {
+      "name": "note",
+      "core": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/skills/core/templates/note.md",
+      "vault": "/private/var/folders/0h/7y_j79kn27q27zhcrf4cpd7w0000gn/T/tmpd055f8_y/vault/templates/note.md"
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "Modo seguro: no se sobrescribieron plantillas existentes del vault."
+  ],
+  "message": "Sincronización de plantillas completada en modo seguro."
+}

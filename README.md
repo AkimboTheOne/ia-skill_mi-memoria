@@ -173,7 +173,9 @@ Con el vault configurado, `remember` escribe por defecto en `memory/` del vault.
 
 Las plantillas del vault tienen prioridad. Si falta una plantilla primitiva del vault, el runtime usa la plantilla CORE de `skills/core/templates` y emite un warning recomendando restaurarla con `scripts/skill_setup.sh` o crear una plantilla propia.
 
-`template generate` crea previews en `workspace/preview/templates`. `template apply` copia esos previews a `vault/templates` solo si el destino no existe.
+`template generate` crea previews en `workspace/preview/templates`. `template apply` copia esos previews a `vault/templates` solo si el destino no existe. `template sync` sincroniza faltantes CORE al vault en modo seguro y reporta diferencias sin sobrescribir.
+
+`capabilities --json` expone metadata por comando para agentes. La fuente canónica se mantiene en `docs/skill-manifest.json`.
 
 ## P5 readiness (aún no ejecutada)
 

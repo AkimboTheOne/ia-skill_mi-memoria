@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (pre-p5-madurez)
+
+- `template sync` agrega sincronización segura de plantillas CORE hacia `vault/templates` (solo faltantes, sin sobrescritura) con reportes `.md` + `.json`.
+- `capabilities --json` incorpora metadata por comando orientada a carga rápida de contexto por LLM.
+- Se introduce `docs/skill-manifest.json` como fuente canónica machine-first para capacidades y metadatos operacionales.
+
 ## v0.4.1
 
 - Hardening de madurez P4 previo a P5 (sin ejecutar interoperabilidad).

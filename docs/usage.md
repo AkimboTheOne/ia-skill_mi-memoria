@@ -177,9 +177,18 @@ Con `--vault-path` o `MI_MEMORIA_VAULT_PATH`, el preview queda en `vault/workspa
 ./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview --json
 ./bin/mi-memoria template validate --input workspace/preview/templates/log-diario.md --json
 ./bin/mi-memoria template apply --input workspace/preview/templates/log-diario.md --vault-path /path/to/vault --json
+./bin/mi-memoria template sync --vault-path /path/to/vault --json
 ```
 
-`template generate` no escribe al vault. Genera previews en `workspace/preview/templates`. `template apply` requiere vault y no sobrescribe templates existentes.
+`template generate` no escribe al vault. Genera previews en `workspace/preview/templates`. `template apply` requiere vault y no sobrescribe templates existentes. `template sync` agrega plantillas CORE faltantes en modo seguro y reporta diferencias sin sobrescribir.
+
+## Metadata para LLM
+
+```bash
+./bin/mi-memoria capabilities --json
+```
+
+El manifiesto canónico de metadata por comando vive en `docs/skill-manifest.json` y se expone en `capabilities --json` para contextualización rápida de agentes.
 
 ## Memoria
 

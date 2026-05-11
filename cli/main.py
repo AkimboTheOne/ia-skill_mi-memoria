@@ -12,6 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from cli.core.metadata import build_capabilities_payload
+from cli.services.template_sync import sync_templates_safe
+
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "workspace"
@@ -31,6 +34,7 @@ VALID_DESTINATIONS = ["00-inbox", "10-areas", "20-projects", "30-resources", "40
 STANDARD_SECTIONS = ["Resumen", "Desarrollo", "Relaciones", "Pendientes"]
 REMEMBER_TYPES = ["decision", "convention", "learning", "constraint", "taxonomy"]
 SESSION_DIR = ROOT / "tmp" / "sessions"
+SKILL_MANIFEST_PATH = ROOT / "docs" / "skill-manifest.json"
 
 
 def core_template_warning(note_type: str) -> str:
@@ -1605,48 +1609,21 @@ def command_session(args: argparse.Namespace) -> int:
 
 
 def command_capabilities(args: argparse.Namespace) -> int:
-    data = {
-        "ok": True,
-        "name": "mi-memoria",
-        "version": "0.4.1",
-        "maturity": "p4-stable",
-        "skills": ["normalize"],
-        "commands": [
-            "ask",
-            "explain",
-            "context",
-            "capabilities",
-            "run normalize",
-            "validate",
-            "remember",
-            "apply",
-            "template",
-            "upgrade",
-            "capture",
-            "daily",
-            "decision",
-            "classify",
-            "review",
-            "link",
-            "summarize",
-            "index",
-            "timeline",
-            "drift-detection",
-            "curate",
-            "publish",
-            "archive",
-            "query",
-            "context-build",
-            "session",
-        ],
-        "types": VALID_TYPES,
-        "decision_statuses": VALID_DECISION_STATUSES,
-        "capture_kinds": VALID_CAPTURE_KINDS,
-        "statuses": VALID_STATUSES,
-        "destinations": VALID_DESTINATIONS,
-    }
-    emit(data, args.json)
-    return 0
+    try:
+        data = build_capabilities_payload(
+            manifest_path=SKILL_MANIFEST_PATH,
+            maturity="p4-stable",
+            valid_types=VALID_TYPES,
+            valid_decision_statuses=VALID_DECISION_STATUSES,
+            valid_capture_kinds=VALID_CAPTURE_KINDS,
+            valid_statuses=VALID_STATUSES,
+            valid_destinations=VALID_DESTINATIONS,
+        )
+        emit(data, args.json)
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "capabilities", "errors": [str(exc)], "message": str(exc)}, args.json)
+        return 2
 
 
 def command_explain(args: argparse.Namespace) -> int:
@@ -1942,6 +1919,43 @@ def command_template_apply(args: argparse.Namespace) -> int:
         return 0
     except Exception as exc:
         emit({"ok": False, "command": "template apply", "message": str(exc), "errors": [str(exc)]}, args.json)
+        return 2
+
+
+def command_template_sync(args: argparse.Namespace) -> int:
+    try:
+        vault = resolve_vault_path(args.vault_path)
+        vault_templates_dir = vault / "templates"
+        ensure_inside(vault, vault_templates_dir)
+        report_md = Path(args.report) if args.report else unique_path(PREVIEW_DIR / f"{now_date()}-template-sync-report.md")
+        report_json = report_md.with_suffix(".json")
+        sync_data = sync_templates_safe(
+            core_templates_dir=CORE_TEMPLATE_DIR,
+            vault_templates_dir=vault_templates_dir,
+            report_md_path=report_md,
+            date_fn=now_date,
+        )
+
+        payload = {
+            "ok": True,
+            "command": "template sync",
+            "mode": sync_data["mode"],
+            "vault_path": str(vault),
+            "artifacts": {"md": str(report_md), "json": str(report_json)},
+            "summary": sync_data["summary"],
+            "added": sync_data["added"],
+            "missing_before_sync": sync_data["missing_before_sync"],
+            "skipped": sync_data["skipped"],
+            "outdated": sync_data["outdated"],
+            "errors": [],
+            "warnings": sync_data["warnings"],
+            "message": "Sincronización de plantillas completada en modo seguro.",
+        }
+        report_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        emit(payload, args.json)
+        return 0
+    except Exception as exc:
+        emit({"ok": False, "command": "template sync", "message": str(exc), "errors": [str(exc)]}, args.json)
         return 2
 
 
@@ -2311,6 +2325,12 @@ def build_parser() -> argparse.ArgumentParser:
     template_apply.add_argument("--vault-path")
     template_apply.add_argument("--json", action="store_true")
     template_apply.set_defaults(func=command_template_apply)
+
+    template_sync = template_sub.add_parser("sync")
+    template_sync.add_argument("--vault-path", required=True)
+    template_sync.add_argument("--report")
+    template_sync.add_argument("--json", action="store_true")
+    template_sync.set_defaults(func=command_template_sync)
 
     remember = sub.add_parser("remember")
     remember.add_argument("--summary")
