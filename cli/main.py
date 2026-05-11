@@ -30,6 +30,7 @@ from cli.commands.normalize_commands import handle_run_normalize, handle_validat
 from cli.commands.production_commands import handle_capture, handle_daily, handle_decision
 from cli.commands.quality_commands import handle_classify, handle_link, handle_review, handle_summarize
 from cli.commands.runtime_commands import handle_ask, handle_context, handle_explain
+from cli.commands.safeguard_commands import handle_apply, handle_archive, handle_remember
 from cli.commands.upgrade_commands import handle_upgrade
 from cli.commands.template_commands import (
     handle_template_apply,
@@ -1117,154 +1118,50 @@ def command_template_sync(args: argparse.Namespace) -> int:
 
 
 def command_remember(args: argparse.Namespace) -> int:
-    if args.summary:
-        summary = clean_inline(args.summary)
-        source_ref = "summary"
-    elif args.input:
-        input_path = Path(args.input)
-        summary = summarize(strip_existing_frontmatter(input_path.read_text(encoding="utf-8")))
-        source_ref = str(input_path)
-    else:
-        summary = ""
-        source_ref = ""
-    if not summary:
-        emit({"ok": False, "message": "La memoria requiere --summary no vacío.", "errors": ["summary vacío"]}, args.json)
-        return 2
-    try:
-        ensure_runtime_dirs()
-        title = summary[:60]
-        filename = f"{now_date()}-{slugify(title)}.md"
-        if args.scope == "runtime":
-            template = resolve_template("memory")
-            output = unique_path(ROOT / "memory" / "hot" / filename)
-        else:
-            vault = resolve_vault_path(args.vault_path)
-            template = resolve_template("memory", vault)
-            output = unique_path(vault / "memory" / filename)
-            ensure_inside(vault, output)
-            output.parent.mkdir(parents=True, exist_ok=True)
-        metadata = {
-            "title": title,
-            "type": "memory",
-            "status": "active",
-            "created": now_date(),
-            "updated": now_date(),
-            "tags": ["mi-memoria", "memory", args.type],
-            "aliases": [],
-            "source": "remember",
-        }
-        content = render_template(
-            template["content"],
-            metadata,
-            {
-                "Memoria": summary,
-            },
-        )
-        if "## Contexto" in content:
-            content = content.replace("## Contexto\n\n", f"## Contexto\n\n- Tipo: {args.type}\n- Fuente: {source_ref}\n\n")
-        elif "## Memoria" in content:
-            content = content.replace("## Memoria\n\n", f"## Memoria\n\n- Tipo: {args.type}\n- Fuente: {source_ref}\n\n")
-        output.write_text(content, encoding="utf-8")
-        log_operation(f"remember.{args.scope}", "summary", str(output), "ok")
-        emit(
-            {
-                "ok": True,
-                "scope": args.scope,
-                "output_path": str(output),
-                "template": {
-                    "type": "memory",
-                    "source": template["source"],
-                    "path": template["path"],
-                },
-                "memory_type": args.type,
-                "source_ref": source_ref,
-                "warnings": template["warnings"],
-                "message": f"Memoria guardada: {output}",
-            },
-            args.json,
-        )
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "scope": args.scope, "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_remember(
+        args=args,
+        clean_inline=clean_inline,
+        summarize=summarize,
+        strip_existing_frontmatter=strip_existing_frontmatter,
+        ensure_runtime_dirs=ensure_runtime_dirs,
+        now_date=now_date,
+        slugify=slugify,
+        unique_path=unique_path,
+        resolve_template=resolve_template,
+        resolve_vault_path=resolve_vault_path,
+        ensure_inside=ensure_inside,
+        render_template=render_template,
+        root=ROOT,
+        log_operation=log_operation,
+        emit=emit,
+    )
 
 
 def command_archive(args: argparse.Namespace) -> int:
-    try:
-        vault = resolve_vault_path(args.vault_path)
-        source = resolve_existing_path(args.input, vault)
-        ensure_inside(vault, source)
-        if source.suffix != ".md" or not source.is_file():
-            raise ValueError("archive requiere un archivo .md existente.")
-        destination = vault / "40-archive" / source.name
-        ensure_inside(vault, destination)
-        if destination.exists():
-            raise ValueError(f"Destino ya existe: {destination}")
-        text = source.read_text(encoding="utf-8")
-        links = re.findall(r"\[\[([^\]]+)\]\]", text)
-        plan = {"source": str(source), "destination": str(destination), "links_detected": len(links), "warnings": ["Archivar no borra contenido; mueve la nota a 40-archive."]}
-        if args.preview:
-            emit({"ok": True, "command": "archive", "mode": "preview", "plan": plan, "message": "Plan de archivado generado."}, args.json)
-            return 0
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(source), str(destination))
-        log_operation("archive.apply", str(source), str(destination), "ok")
-        emit({"ok": True, "command": "archive", "mode": "apply", "plan": plan, "output_path": str(destination), "message": f"Nota archivada: {destination}"}, args.json)
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "archive", "errors": [str(exc)], "warnings": [], "message": str(exc)}, args.json)
-        return 2
+    return handle_archive(
+        args=args,
+        resolve_vault_path=resolve_vault_path,
+        resolve_existing_path=resolve_existing_path,
+        ensure_inside=ensure_inside,
+        log_operation=log_operation,
+        emit=emit,
+    )
 
 
 def command_apply(args: argparse.Namespace) -> int:
-    try:
-        source = Path(args.input).resolve()
-        vault = resolve_vault_path(args.vault_path)
-        preview_root = PREVIEW_DIR.resolve()
-        vault_preview_root = (vault / VAULT_PREVIEW_DIR).resolve()
-        source_in_runtime_preview = preview_root == source or preview_root in source.parents
-        source_in_vault_preview = vault_preview_root == source or vault_preview_root in source.parents
-        if not source_in_runtime_preview and not source_in_vault_preview:
-            raise ValueError("apply solo acepta archivos dentro de workspace/preview del runtime o del vault.")
-        if source.suffix != ".md" or not source.is_file():
-            raise ValueError("El input de apply debe ser un archivo Markdown existente.")
-        text = source.read_text(encoding="utf-8")
-        validation = validate_text(text, source.name)
-        if not validation["ok"]:
-            emit(
-                {
-                    "ok": False,
-                    "input": str(source),
-                    "errors": validation["errors"],
-                    "warnings": validation["warnings"],
-                    "checks": validation["checks"],
-                    "message": "No se aplicó porque la nota no valida.",
-                },
-                args.json,
-            )
-            return 1
-        frontmatter = parse_frontmatter(text)
-        destination_dir = classify(frontmatter.get("type", "note"), text)
-        destination = unique_path(vault / destination_dir / source.name)
-        ensure_inside(vault, destination)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-        log_operation("apply", str(source), str(destination), "ok")
-        emit(
-            {
-                "ok": True,
-                "input": str(source),
-                "output_path": str(destination),
-                "proposed_vault_path": str(destination.relative_to(vault)),
-                "validation": validation,
-                "message": f"Nota aplicada al vault: {destination}",
-            },
-            args.json,
-        )
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_apply(
+        args=args,
+        resolve_vault_path=resolve_vault_path,
+        runtime_preview_dir=PREVIEW_DIR,
+        vault_preview_dir_name=str(VAULT_PREVIEW_DIR),
+        validate_text=validate_text,
+        parse_frontmatter=parse_frontmatter,
+        classify=classify,
+        unique_path=unique_path,
+        ensure_inside=ensure_inside,
+        log_operation=log_operation,
+        emit=emit,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
