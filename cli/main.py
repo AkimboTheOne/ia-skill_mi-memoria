@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from cli.commands.capabilities_commands import handle_capabilities
+from cli.commands.runtime_commands import handle_context, handle_explain
 from cli.commands.upgrade_commands import handle_upgrade
 from cli.commands.template_commands import (
     handle_template_apply,
@@ -1586,47 +1587,19 @@ def command_capabilities(args: argparse.Namespace) -> int:
 
 
 def command_explain(args: argparse.Namespace) -> int:
-    emit(
-        {
-            "ok": True,
-            "message": "mi-memoria es un runtime local para normalizar, validar y consolidar notas Markdown en un vault externo.",
-        },
-        args.json,
-    )
-    return 0
+    return handle_explain(args=args, emit=emit)
 
 
 def command_context(args: argparse.Namespace) -> int:
-    vault = os.environ.get("MI_MEMORIA_VAULT_PATH", "")
-    vault_workspace = ""
-    if vault:
-        try:
-            vault_workspace = str(resolve_vault_path(vault) / VAULT_WORKSPACE)
-        except ValueError:
-            vault_workspace = ""
-    data = {
-        "ok": True,
-        "runtime": str(ROOT),
-        "workspace": str(WORKSPACE),
-        "vault": vault,
-        "vault_workspace": vault_workspace,
-        "language": os.environ.get("MI_MEMORIA_DEFAULT_LANGUAGE", "es"),
-    }
-    emit(
-        data
-        if args.json
-        else {
-            **data,
-            "message": (
-                f"Runtime: {ROOT}\n"
-                f"Workspace runtime: {WORKSPACE}\n"
-                f"Vault: {vault or '(no configurado)'}\n"
-                f"Workspace vault: {vault_workspace or '(no configurado)'}"
-            ),
-        },
-        args.json,
+    return handle_context(
+        args=args,
+        runtime_root=ROOT,
+        workspace=WORKSPACE,
+        vault_workspace_name=str(VAULT_WORKSPACE),
+        resolve_vault_path=resolve_vault_path,
+        env_get=os.environ.get,
+        emit=emit,
     )
-    return 0
 
 
 def command_ask(args: argparse.Namespace) -> int:
