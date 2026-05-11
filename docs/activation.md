@@ -13,9 +13,11 @@ También puede instalarse como skill global de usuario en `~/.agents/skills/` o 
 
 En todos los casos, `SKILL.md` debe quedar en la raíz de la carpeta del skill.
 
-## Slash command conceptual
+## Activación en `prompt`
 
-```text
+Usa este formato cuando estés en un agente conversacional o coding CLI que cargue el skill.
+
+```prompt
 /mi-memoria normalize
 /mi-memoria remember
 /mi-memoria validate
@@ -24,9 +26,16 @@ En todos los casos, `SKILL.md` debe quedar en la raíz de la carpeta del skill.
 /mem validate
 ```
 
+```prompt
+Organiza esta nota.
+Normaliza esta idea antes de moverla.
+Clasifica este Markdown.
+Guarda esta decisión como memoria.
+```
+
 `/mem` es alias corto de `/mi-memoria`. Ambos activan el mismo runtime, las mismas reglas y las mismas capacidades; no existe un segundo CLI.
 
-## CLI local
+## Comandos técnicos en `bash`
 
 ```bash
 ./bin/mi-memoria run normalize --input note.md --preview

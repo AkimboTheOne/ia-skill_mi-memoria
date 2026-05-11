@@ -428,8 +428,8 @@ def validate_text(text: str, filename: str | None = None) -> dict[str, Any]:
         for section in STANDARD_SECTIONS:
             if f"## {section}" not in text:
                 errors.append(f"Falta sección requerida: {section}")
-    if filename and not re.match(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$", Path(filename).name):
-        errors.append("Nombre de archivo no cumple yyyy-mm-dd-slug.md")
+    if filename and not re.match(r"^(?:\d{4}-\d{2}-\d{2}-)?[a-z0-9]+(?:-[a-z0-9]+)*\.md$", Path(filename).name):
+        errors.append("Nombre de archivo no cumple yyyy-mm-dd-slug.md o slug.md")
     return {
         "ok": not errors,
         "errors": errors,
