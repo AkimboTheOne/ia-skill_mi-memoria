@@ -8,7 +8,7 @@ tags: [mi-memoria, roadmap, memoria, gobernanza]
 aliases: []
 source: "sintesis-roadmap"
 ---
-# Roadmap Maestro
+# Roadmap maestro
 
 ## Memoria
 
@@ -33,7 +33,7 @@ La documentación fuente fue absorbida desde `docs/roadmap/` y el staging parale
 - [P4 flujos productivos](./p4-flujos-productivos.md)
 - [P5 interoperabilidad controlada](./p5-interoperabilidad-controlada.md)
 
-## Cronología Validada
+## Cronología validada
 
 - 2026-05-08: baseline inicial y separación runtime/vault consolidada en `v0.1.0`.
 - 2026-05-10: P1 entra como expansión operativa con `capture`, `classify`, `review`, `link` y `summarize`.
@@ -42,7 +42,7 @@ La documentación fuente fue absorbida desde `docs/roadmap/` y el staging parale
 - 2026-05-10: P4 formaliza `daily`, `decision`, `curate` y `publish`, con `capture` avanzado.
 - 2026-05-10: P5 queda diferida; la documentación de cierre pre-P5 valida contratos, no interoperabilidad.
 
-## Corpus De Origen
+## Corpus de origen
 
 Fuentes revisadas:
 
@@ -56,7 +56,7 @@ Fuentes revisadas:
 - `docs/roadmap/mi-memoria-p5-interoperabilidad-controlada-subcharter-v0.1.md`
 - Réplicas de trabajo en `docs/00-inbox/roadmap/`
 
-## Decisiones Consolidadas
+## Decisiones consolidadas
 
 ### 1. Separación arquitectónica
 
@@ -88,7 +88,7 @@ La CLI es el contrato operativo primario. Cualquier capa adicional debe preserva
 
 MCP, HTTPS y proveedores externos quedan al final. Exponer contratos inmaduros antes de tiempo aumenta deuda y riesgo.
 
-## Mapa Operativo Por Fase
+## Mapa operativo por fase
 
 ### P1
 
@@ -136,7 +136,7 @@ Objetivo: interoperabilidad controlada y segura.
 - HTTPS runtime
 - external providers
 
-## Reglas Que Deben Permanecer
+## Reglas que deben permanecer
 
 - el runtime no se incrusta dentro del vault;
 - no se escriben memorias indiscriminadas;
@@ -144,7 +144,7 @@ Objetivo: interoperabilidad controlada y segura.
 - no se publican capacidades inmaduras;
 - no se pierde trazabilidad entre síntesis y fuentes.
 
-## Lectura Operativa
+## Lectura operativa
 
 Este corpus debe leerse como una secuencia documental:
 
@@ -154,7 +154,7 @@ Este corpus debe leerse como una secuencia documental:
 4. curación por fase;
 5. aplicación explícita al vault definitivo.
 
-## Preparación Para Vault Definitivo
+## Preparación para vault definitivo
 
 Estos documentos curados están listos para aplicar cuando se decida el destino final en el vault. La intención actual es mantenerlos como staging visible, con rutas reproducibles y referencias preservadas.
 

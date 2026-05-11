@@ -1,4 +1,4 @@
-# Memoria de Iteración Pre‑P5
+# Memoria de iteración pre‑P5
 
 Fecha de cierre: 2026-05-11
 Rama: `pre-p5-madurez`

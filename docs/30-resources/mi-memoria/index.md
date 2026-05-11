@@ -9,13 +9,13 @@ aliases: [manual de mi-memoria, documentación del producto]
 source: "README.md, SKILL.md, docs/*.md, skill-manifest.json, capabilities, git"
 ---
 
-# Documentación de Usuario
+# Documentación de usuario
 
 ## Resumen
 
 Este paquete reúne la documentación pensada para usuarios del skill y del proyecto:
 
-- qué es `mi-memoria`;
+- ¿qué es `mi-memoria`?;
 - cómo se usa;
 - qué comandos tiene;
 - cómo interpretar manifests y capacidades;

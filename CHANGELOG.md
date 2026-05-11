@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Se reorganiza la documentación del proyecto dentro de `docs/`: se publica el hub de usuario en `docs/30-resources/mi-memoria/`, se racionaliza la memoria curada en `docs/memory/` y se desmonta el corpus fuente histórico de `docs/roadmap/`.
+- Se alinean `README.md`, `SKILL.md` y `docs/documentation-governance.md` con la nueva taxonomía documental y los vínculos entre usuario, gobernanza y memoria.
+- Se estandariza la documentación de uso con la distinción `prompt`/`bash`, se amplían `commands.md`, `manifests.md`, `overview.md`, `workflows.md` y `quickstart.md`, y se registra un plan de iteración documental reutilizable en vault y runtime.
+- Se modela `docs/20-projects/documentation-conventions.md` como proyecto vivo del vault para estabilizar y evolucionar las convenciones documentales del skill.
+- Se incorporan context packs curados en `docs/workspace/exports/` y memoria de runtime asociada para conservar trazabilidad de la iteración documental.
+
 ## v0.4.2
 
 - Manifiesto machine-first canónico movido a `skill-manifest.json` (raíz) con espejo idéntico en `docs/skill-manifest.json` para compatibilidad transitoria.

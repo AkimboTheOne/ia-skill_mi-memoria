@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-p1-consolidacion-operacional-subcharter-v0.1.md"
 ---
 
-# P1 Consolidación Operacional Curada
+# P1 consolidación operacional curada
 
 ## Memoria
 
 P1 fortalece el ciclo básico de trabajo. Su objetivo es convertir la baseline en un runtime útil para captura, revisión y síntesis cotidiana.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-10
 - Alineado con la expansión P1 documentada en `CHANGELOG.md` bajo `v0.1.1`
@@ -36,7 +36,7 @@ P1 fortalece el ciclo básico de trabajo. Su objetivo es convertir la baseline e
 - `link`
 - `summarize`
 
-## Resultado Esperado
+## Resultado esperado
 
 - notas capturadas en workspace;
 - clasificación sin movimientos automáticos;
@@ -44,11 +44,11 @@ P1 fortalece el ciclo básico de trabajo. Su objetivo es convertir la baseline e
 - enlaces sugeridos sin persistencia;
 - síntesis trazable.
 
-## Regla Documental
+## Regla documental
 
 P1 no introduce infraestructura externa. Su valor está en la calidad operativa del flujo diario.
 
-## Lectura Operativa
+## Lectura operativa
 
 P1 no agrega complejidad estructural. Cierra el ciclo mínimo:
 

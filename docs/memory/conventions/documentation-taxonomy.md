@@ -9,7 +9,7 @@ aliases: [taxonomia documental, convención de documentación]
 source: "gobernanza-documental"
 ---
 
-# Convención de Taxonomía Documental
+# Convención de taxonomía documental
 
 ## Memoria
 
@@ -27,7 +27,7 @@ La convención es:
 - `docs/40-archive/` guarda material cerrado o histórico;
 - `docs/00-inbox/` guarda material sin clasificar.
 
-## Regla De Clasificación
+## Regla de clasificación
 
 Usar `docs/memory/` cuando el documento responde a una pregunta de gobernanza:
 
@@ -45,7 +45,7 @@ Usar la taxonomía numerada cuando el documento responde a una pregunta de uso:
 - cómo ejecutar un flujo;
 - cómo referenciar una capacidad.
 
-## Consecuencia Práctica
+## Consecuencia práctica
 
 La documentación del producto o del skill puede vivir en los numerales, normalmente en `30-resources/`, si su función es servir como referencia de usuario.
 
@@ -65,7 +65,7 @@ Esta convención se apoya en:
 - [documentación de usuario](../../30-resources/mi-memoria/index.md)
 - [memoria README](../README.md)
 
-## Lectura Operativa
+## Lectura operativa
 
 Si el documento explica el sistema, va a memoria.
 

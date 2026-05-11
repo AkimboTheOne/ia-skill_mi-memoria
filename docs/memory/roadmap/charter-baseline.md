@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-charter-baseline-v0.1.md"
 ---
 
-# Charter Baseline Curado
+# Charter baseline curado
 
 ## Memoria
 
 La baseline define a `mi-memoria` como un runtime local separado del vault de conocimiento. El objetivo es operar sobre Markdown de forma controlada, incremental y verificable.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-08
 - Validado en `CHANGELOG.md` como baseline `v0.1.0`
@@ -27,7 +27,7 @@ La baseline define a `mi-memoria` como un runtime local separado del vault de co
 - [evolution rationale](./evolution-rationale.md)
 - [evolution plan](./evolution-plan.md)
 
-## Decisiones Clave
+## Decisiones clave
 
 - runtime y vault son repositorios distintos;
 - la memoria persistente debe ser curada;
@@ -36,7 +36,7 @@ La baseline define a `mi-memoria` como un runtime local separado del vault de co
 - la activación puede ser natural, slash command o CLI;
 - la interoperabilidad no forma parte de la baseline.
 
-## Qué Se Conserva
+## Qué se conserva
 
 - separación técnica;
 - minimalismo operacional;
@@ -44,11 +44,11 @@ La baseline define a `mi-memoria` como un runtime local separado del vault de co
 - salidas verificables;
 - memoria reflexiva y útil.
 
-## Implicación Documental
+## Implicación documental
 
 Este charter no se usa como nota operativa diaria. Se conserva como fundamento arquitectónico y referencia de gobernanza.
 
-## Lectura Operativa
+## Lectura operativa
 
 Esta pieza es fundacional. No describe features de fase, sino restricciones que siguen vigentes:
 

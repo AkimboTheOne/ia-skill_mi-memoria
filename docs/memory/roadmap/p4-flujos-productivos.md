@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-p4-flujos-productivos-subcharter-v0.1.md"
 ---
 
-# P4 Flujos Productivos de Conocimiento Curado
+# P4 flujos productivos de conocimiento curada
 
 ## Memoria
 
 P4 formaliza los flujos de trabajo cotidianos y convierte el runtime en una herramienta práctica para captura, decisión, curaduría y publicación.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-10
 - Alineado con `CHANGELOG.md` en `v0.4.0` y hardening posterior en `v0.4.1` y `v0.4.2`
@@ -36,11 +36,11 @@ P4 formaliza los flujos de trabajo cotidianos y convierte el runtime en una herr
 - `curate`
 - `publish`
 
-## Regla Documental
+## Regla documental
 
 P4 debe producir herramientas de trabajo, no ruido operativo.
 
-## Lectura Operativa
+## Lectura operativa
 
 P4 convierte capacidades útiles en rutina:
 

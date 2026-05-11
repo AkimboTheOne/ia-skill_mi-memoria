@@ -102,7 +102,7 @@ Genera `drift-report.md` y `drift-report.json` con deriva verificable.
 
 `publish` exporta paquetes sin modificar archivos fuente.
 
-## Estado P5
+## Estado de P5
 
 P5 no está ejecutada en esta versión. No existen comandos `serve`, endpoints HTTPS ni bridge MCP activos en el runtime.
 

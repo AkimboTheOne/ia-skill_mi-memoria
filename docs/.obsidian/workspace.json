@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "memory/roadmap/evolution-plan.md",
+                "file": "20-projects/documentation-conventions.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "evolution-plan"
+              "title": "documentation-conventions"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "memory/roadmap/evolution-plan.md",
+                "file": "20-projects/documentation-conventions.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Enlaces entrantes de evolution-plan"
+              "title": "Enlaces entrantes de documentation-conventions"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "memory/roadmap/evolution-plan.md",
+                "file": "20-projects/documentation-conventions.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Enlaces salientes de evolution-plan"
+              "title": "Enlaces salientes de documentation-conventions"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "memory/roadmap/evolution-plan.md",
+                "file": "20-projects/documentation-conventions.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Esquema de evolution-plan"
+              "title": "Esquema de documentation-conventions"
             }
           }
         ]
@@ -185,35 +185,35 @@
   },
   "active": "02c28b0d9a42e9bd",
   "lastOpenFiles": [
+    "30-resources/mi-memoria/overview.md",
+    "20-projects/documentation-conventions.md",
+    "20-projects/README.md",
+    "memory/conventions/documentation-iteration-plan.md",
+    "30-resources/mi-memoria/workflows.md",
+    "30-resources/mi-memoria/manifests.md",
+    "30-resources/mi-memoria/commands.md",
+    "30-resources/mi-memoria/index.md",
+    "memory/2026-05-10-se-racionalizo-el-historico-de-roadmap-de-mi-memoria-en-un-m.md",
+    "memory/2026-05-10-se-construyeron-dos-context-packs-dentro-del-vault-para-orga.md",
+    "memory/2026-05-10-en-el-dominio-roadmap-de-mi-memoria-se-adopto-una-nomenclatu.md",
+    "memory/conventions/README.md",
+    "memory/conventions/editorial-style.md",
+    "memory/conventions/documentation-taxonomy.md",
+    "activation.md",
+    "memory/roadmap/evolution-plan.md",
     "memory/roadmap/README.md",
     "memory/roadmap/roadmap-maestro.md",
     "memory/roadmap/charter-baseline.md",
-    "memory/conventions/README.md",
-    "memory/conventions/documentation-taxonomy.md",
-    "30-resources/mi-memoria/index.md",
-    "30-resources/mi-memoria/overview.md",
-    "30-resources/mi-memoria/manifests.md",
     "30-resources/README.md",
-    "30-resources/mi-memoria/workflows.md",
     "30-resources/mi-memoria/troubleshooting.md",
     "30-resources/mi-memoria/quickstart.md",
-    "30-resources/mi-memoria/commands.md",
     "workspace/README.md",
     "30-resources/mi-memoria",
     "templates/product-guide.md",
     "architecture.md",
     "memory/conventions",
     "indexes/README.md",
-    "memory/roadmap/p5-interoperabilidad-controlada.md",
-    "memory/roadmap/p4-flujos-productivos.md",
-    "memory/roadmap/p3-inteligencia-contextual.md",
-    "memory/roadmap/p2-gobernanza-conocimiento.md",
-    "memory/roadmap/p1-consolidacion-operacional.md",
-    "memory/roadmap/evolution-rationale.md",
-    "memory/roadmap/evolution-plan.md",
     "memory/roadmap",
-    "workspace/preview/roadmap/roadmap-maestro.md",
-    "memory/2026-05-10-en-el-dominio-roadmap-de-mi-memoria-se-adopto-una-nomenclatu.md",
     "workspace/preview/roadmap",
     "workspace/exports/2026-05-10-p4-organizar-documentacion-docs-context-pack-source-map.json",
     "workspace/exports/2026-05-10-p4-organizar-documentacion-docs-context-pack.json",

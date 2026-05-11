@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-p2-gobernanza-conocimiento-subcharter-v0.1.md"
 ---
 
-# P2 Gobernanza del Conocimiento Curada
+# P2 gobernanza del conocimiento curada
 
 ## Memoria
 
 P2 introduce mantenimiento del conocimiento ya consolidado. La pregunta principal no es cómo producir más contenido, sino cómo mantenerlo navegable, coherente y archivado.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-10
 - Alineado con `CHANGELOG.md` en `v0.2.0`
@@ -36,11 +36,11 @@ P2 introduce mantenimiento del conocimiento ya consolidado. La pregunta principa
 - `archive`
 - `remember` evolucionado
 
-## Regla Documental
+## Regla documental
 
 P2 no reubica notas automáticamente. Produce señal, no mutación silenciosa.
 
-## Lectura Operativa
+## Lectura operativa
 
 P2 convierte acumulación en gobernanza:
 

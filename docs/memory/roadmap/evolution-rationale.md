@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-conversation-memory-evolution-rationale-v0.1.md"
 ---
 
-# Racional de Evolución Curado
+# Racional de evolución curado
 
 ## Memoria
 
 Este documento formaliza la idea central: el LLM asiste, pero no gobierna. La evolución de `mi-memoria` se ordena en fases para evitar sobreingeniería y para preservar el control humano y del runtime.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-10
 - Consolida el racional que aparece en el corpus de P1 a P5 y en la historia temprana del repositorio
@@ -27,7 +27,7 @@ Este documento formaliza la idea central: el LLM asiste, pero no gobierna. La ev
 - [charter baseline](./charter-baseline.md)
 - [evolution plan](./evolution-plan.md)
 
-## Decisiones Clave
+## Decisiones clave
 
 - modelo adoptado: `Human-governed / Runtime-controlled / LLM-assisted`;
 - el LLM puede sugerir, resumir y clasificar;
@@ -36,14 +36,14 @@ Este documento formaliza la idea central: el LLM asiste, pero no gobierna. La ev
 - la interoperabilidad se deja al final;
 - `context/` se reserva para metaconocimiento y gobernanza.
 
-## Riesgo Que Se Evita
+## Riesgo que se evita
 
 - autonomía prematura;
 - persistencia indiscriminada;
 - exposición de contratos inmaduros;
 - expansión de superficie técnica antes de tener base estable.
 
-## Lectura Operativa
+## Lectura operativa
 
 La regla central es que el modelo de inteligencia contextual no sustituye gobernanza. En el corpus, esto se traduce en:
 

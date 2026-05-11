@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-evolution-master-plan-v0.1.md"
 ---
 
-# Plan de Evolución Curado
+# Plan de evolución curado de `mi-memoria`
 
 ## Memoria
 
 El plan de evolución traduce la baseline y el racional en una secuencia de implementación. Cada fase debe consolidarse antes de introducir la siguiente.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-10
 - Secuencia visible en `CHANGELOG.md` desde P1 hasta P4 y en la materialización de P5 como fase diferida
@@ -32,7 +32,7 @@ El plan de evolución traduce la baseline y el racional en una secuencia de impl
 - [P4 flujos productivos](./p4-flujos-productivos.md)
 - [P5 interoperabilidad controlada](./p5-interoperabilidad-controlada.md)
 
-## Secuencia Aprobada
+## Secuencia aprobada
 
 1. P1 Consolidación Operacional
 2. P2 Gobernanza del Conocimiento
@@ -40,7 +40,7 @@ El plan de evolución traduce la baseline y el racional en una secuencia de impl
 4. P4 Flujos Productivos de Conocimiento
 5. P5 Interoperabilidad Controlada
 
-## Regla De Trabajo
+## Regla de trabajo
 
 - cada fase debe tener comandos reales, pruebas y salidas verificables;
 - no se deben saltar prerequisitos;
@@ -48,11 +48,11 @@ El plan de evolución traduce la baseline y el racional en una secuencia de impl
 - el vault no debe convertirse en runtime;
 - la memoria debe seguir siendo curada.
 
-## Implicación Documental
+## Implicación documental
 
 Este plan funciona como índice de ejecución y como carta de navegación para separar implementación, gobernanza y futuro de interoperabilidad.
 
-## Lectura Operativa
+## Lectura operativa
 
 El plan convierte arquitectura en ruta:
 

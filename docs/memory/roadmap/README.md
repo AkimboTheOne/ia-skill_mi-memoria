@@ -26,7 +26,7 @@ Corpus curado definitivo del histórico de decisiones de `mi-memoria`.
 
 Este directorio es la versión definitiva del corpus roadmap dentro de `docs/`.
 
-## Memoria De Curaduría
+## Memoria de curaduría
 
 - [convención de nomenclatura](../2026-05-10-en-el-dominio-roadmap-de-mi-memoria-se-adopto-una-nomenclatu.md)
 - [context packs del vault](../2026-05-10-se-construyeron-dos-context-packs-dentro-del-vault-para-orga.md)

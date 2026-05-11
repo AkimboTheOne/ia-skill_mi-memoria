@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-p3-inteligencia-contextual-subcharter-v0.1.md"
 ---
 
-# P3 Inteligencia Contextual Local Curada
+# P3 inteligencia contextual local curada
 
 ## Memoria
 
 P3 permite construir contexto útil sin cargar todo el vault ni depender de servicios externos.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-10
 - Alineado con `CHANGELOG.md` en `v0.3.0`
@@ -34,11 +34,11 @@ P3 permite construir contexto útil sin cargar todo el vault ni depender de serv
 - `context-build`
 - `session`
 
-## Regla Documental
+## Regla documental
 
 Toda salida contextual debe conservar evidencia y distinguir entre resultado, inferencia e incertidumbre.
 
-## Lectura Operativa
+## Lectura operativa
 
 P3 añade contexto sin convertir el vault en una base de datos opaca:
 

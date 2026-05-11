@@ -9,13 +9,13 @@ aliases: []
 source: "docs/roadmap/mi-memoria-p5-interoperabilidad-controlada-subcharter-v0.1.md"
 ---
 
-# P5 Interoperabilidad Controlada Curada
+# P5 interoperabilidad controlada curada
 
 ## Memoria
 
 P5 difiere la interoperabilidad hasta después de consolidar la base local. La exposición a MCP, HTTPS y proveedores externos solo tiene sentido cuando los contratos internos ya son estables.
 
-## Fecha De Referencia
+## Fecha de referencia
 
 - 2026-05-10
 - Validación documental de cierre pre-P5 en `CHANGELOG.md` y en la rama `pre-p5-madurez`
@@ -33,11 +33,11 @@ P5 difiere la interoperabilidad hasta después de consolidar la base local. La e
 - HTTPS runtime
 - external providers
 
-## Regla Documental
+## Regla documental
 
 La interoperabilidad debe ampliar alcance sin ampliar permisos de forma implícita.
 
-## Lectura Operativa
+## Lectura operativa
 
 P5 no se presenta como capacidad madura. Se conserva como frontera de diseño:
 

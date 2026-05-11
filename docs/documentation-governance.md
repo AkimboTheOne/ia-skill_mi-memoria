@@ -1,4 +1,4 @@
-# Gobernanza Documental
+# Gobernanza documental
 
 La documentación de `mi-memoria` es un artefacto operacional. Debe describir el comportamiento verificable del runtime y separar con claridad lo implementado, lo propuesto y lo diferido.
 
@@ -25,9 +25,17 @@ La documentación de `mi-memoria` es un artefacto operacional. Debe describir el
 
 - [docs/memory/](memory/): contiene memoria curada, convenciones y criterios de gobernanza.
 - [docs/00-inbox/](00-inbox/), [docs/10-areas/](10-areas/), [docs/20-projects/](20-projects/), [docs/30-resources/](30-resources/) y [docs/40-archive/](40-archive/) son taxonomía del vault para contenido documental, operativo o de referencia.
+- `docs/20-projects/` también puede alojar proyectos vivos de documentación y estabilización del skill, como el proyecto de convenciones documentales.
 - La documentación de uso y referencia del skill o del proyecto suele vivir en `30-resources/`.
 - La documentación de gobernanza, decisiones y racionales vive en `docs/memory/`.
 - La documentación de usuario curada de `mi-memoria` vive en [docs/30-resources/mi-memoria/](30-resources/mi-memoria/index.md).
+
+## Estilo editorial
+
+- La convención editorial del vault vive en [docs/memory/conventions/editorial-style.md](memory/conventions/editorial-style.md).
+- Usar sentence case por defecto en títulos, secciones y texto visible.
+- Conservar mayúsculas solo cuando aporten semántica: nombres propios, siglas, acrónimos y fases `P1..P5`.
+- Usar `¿qué es ...?` cuando la frase sea una pregunta real.
 
 ## Estado de `review-docs`
 
@@ -58,3 +66,4 @@ El resultado esperado es que las capacidades actuales coincidan con el CLI y que
 - [Documentación de usuario](30-resources/mi-memoria/index.md)
 - [Memoria curada](memory/README.md)
 - [Taxonomía documental](memory/conventions/documentation-taxonomy.md)
+- [Estilo editorial](memory/conventions/editorial-style.md)

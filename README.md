@@ -22,25 +22,36 @@ Runtime local de skills para operar sobre repositorios de conocimiento Markdown,
 
 ## Activación por agente y CLI
 
-Formas de invocar el skill en flujos humanos y de agentes:
+### Activación en `prompt`
 
-1. Slash command para agentes conversacionales:
-- `/mi-memoria capture "Idea inicial"`
-- `/mem review --path workspace/inbox`
+Usa este formato en agentes conversacionales o coding CLIs que carguen el skill.
 
-2. Convención prompt-style usada en algunos coding CLIs:
-- `$mi-memoria summarize --path workspace/inbox`
-- `$mem context-build --topic "arquitectura local"`
+```prompt
+/mi-memoria capture "Idea inicial"
+/mem review --path workspace/inbox
+$mi-memoria summarize --path workspace/inbox
+$mem context-build --topic "arquitectura local"
+```
 
-3. Contrato técnico ejecutable (canónico):
-- `./bin/mi-memoria <comando>`
-- `./bin/mi-memoria capabilities --json`
+```prompt
+Organiza esta nota.
+Normaliza esta idea sobre arquitectura.
+Clasifica este Markdown.
+Guarda esta decisión como memoria.
+```
 
-4. Flujo mínimo recomendado por intención:
-- Capturar: `./bin/mi-memoria capture --kind idea --text "..." --json`
-- Validar/Clasificar: `./bin/mi-memoria classify --input workspace/inbox/<nota>.md --json`
-- Revisar: `./bin/mi-memoria review --path workspace/inbox --json`
-- Publicar: `./bin/mi-memoria publish --path workspace/inbox --format markdown --output workspace/exports/pack --json`
+### Comandos técnicos en `bash`
+
+Usa este formato cuando ejecutes el contrato técnico verificable del repositorio.
+
+```bash
+./bin/mi-memoria <comando>
+./bin/mi-memoria capabilities --json
+./bin/mi-memoria capture --kind idea --text "..." --json
+./bin/mi-memoria classify --input workspace/inbox/<nota>.md --json
+./bin/mi-memoria review --path workspace/inbox --json
+./bin/mi-memoria publish --path workspace/inbox --format markdown --output workspace/exports/pack --json
+```
 
 `$mi-memoria` y `$mem` son convenciones de invocación de agentes. El contrato técnico ejecutable y verificable del repositorio sigue siendo `./bin/mi-memoria`.
 
@@ -185,6 +196,7 @@ La documentación curada de usuario vive en el vault del proyecto, dentro de `do
 - [Gobernanza documental](docs/documentation-governance.md)
 - [Memoria curada del vault](docs/memory/README.md)
 - [Taxonomía documental](docs/memory/conventions/documentation-taxonomy.md)
+- [Estilo editorial](docs/memory/conventions/editorial-style.md)
 
 ## P5 readiness (aún no ejecutada)
 
