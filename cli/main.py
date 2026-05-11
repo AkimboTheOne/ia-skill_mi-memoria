@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from cli.core.metadata import build_capabilities_payload
+from cli.infra.git_tools import run_git_command as infra_run_git_command
 from cli.infra.telemetry import append_operation_logs
 from cli.services.template_sync import sync_templates_safe
 from cli.services.upgrade_service import execute_upgrade
@@ -596,7 +597,8 @@ def ensure_inside(base: Path, target: Path) -> None:
 
 
 def run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, text=True, capture_output=True, check=False)
+    # Keep wrapper in main for backwards-compatible test patching.
+    return infra_run_git_command(args)
 
 
 def command_upgrade(args: argparse.Namespace) -> int:
