@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from cli.core.metadata import build_capabilities_payload
+from cli.commands.capabilities_commands import handle_capabilities
 from cli.commands.upgrade_commands import handle_upgrade
 from cli.commands.template_commands import handle_template_sync
 from cli.infra.git_tools import run_git_command as infra_run_git_command
@@ -1565,21 +1565,17 @@ def command_session(args: argparse.Namespace) -> int:
 
 
 def command_capabilities(args: argparse.Namespace) -> int:
-    try:
-        data = build_capabilities_payload(
-            manifest_path=SKILL_MANIFEST_PATH,
-            maturity="p4-stable",
-            valid_types=VALID_TYPES,
-            valid_decision_statuses=VALID_DECISION_STATUSES,
-            valid_capture_kinds=VALID_CAPTURE_KINDS,
-            valid_statuses=VALID_STATUSES,
-            valid_destinations=VALID_DESTINATIONS,
-        )
-        emit(data, args.json)
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "capabilities", "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_capabilities(
+        args=args,
+        manifest_path=SKILL_MANIFEST_PATH,
+        maturity="p4-stable",
+        valid_types=VALID_TYPES,
+        valid_decision_statuses=VALID_DECISION_STATUSES,
+        valid_capture_kinds=VALID_CAPTURE_KINDS,
+        valid_statuses=VALID_STATUSES,
+        valid_destinations=VALID_DESTINATIONS,
+        emit=emit,
+    )
 
 
 def command_explain(args: argparse.Namespace) -> int:
