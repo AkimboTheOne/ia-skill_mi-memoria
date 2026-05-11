@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from cli.commands.capabilities_commands import handle_capabilities
+from cli.commands.contextual_commands import handle_session, session_file as contextual_session_file
 from cli.commands.normalize_commands import handle_run_normalize, handle_validate
 from cli.commands.runtime_commands import handle_ask, handle_context, handle_explain
 from cli.commands.upgrade_commands import handle_upgrade
@@ -1528,49 +1529,21 @@ def command_context_build(args: argparse.Namespace) -> int:
 
 
 def session_file(name: str) -> Path:
-    SESSION_DIR.mkdir(parents=True, exist_ok=True)
-    return SESSION_DIR / f"{slugify(name)}.json"
+    return contextual_session_file(session_dir=SESSION_DIR, slugify=slugify, name=name)
 
 
 def command_session(args: argparse.Namespace) -> int:
-    try:
-        if args.session_command == "start":
-            payload = {"name": args.name, "created": now_stamp(), "status": "open", "active_files": []}
-            path = session_file(args.name)
-            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            emit({"ok": True, "command": "session", "action": "start", "session": payload, "session_file": str(path), "message": "Sesión iniciada."}, args.json)
-            return 0
-        if not args.name:
-            raise ValueError("session requiere --name.")
-        path = session_file(args.name)
-        if not path.exists():
-            raise ValueError("Sesión no encontrada. Ejecuta session start.")
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        if args.session_command == "add":
-            target = resolve_existing_path(args.input)
-            if str(target) not in payload["active_files"]:
-                payload["active_files"].append(str(target))
-            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            emit({"ok": True, "command": "session", "action": "add", "session_file": str(path), "active_files": payload["active_files"], "message": "Archivo agregado a la sesión."}, args.json)
-            return 0
-        if args.session_command == "context":
-            files = [Path(item) for item in payload["active_files"] if Path(item).exists()]
-            context_items = [{"file": str(file), "summary": summarize(strip_existing_frontmatter(safe_read_text(file)))} for file in files]
-            emit({"ok": True, "command": "session", "action": "context", "name": args.name, "active_files": payload["active_files"], "context": context_items, "message": "Contexto de sesión generado."}, args.json)
-            return 0
-        if args.session_command == "close":
-            payload["status"] = "closed"
-            payload["closed"] = now_stamp()
-            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            remembered = False
-            if args.remember:
-                remembered = True
-            emit({"ok": True, "command": "session", "action": "close", "name": args.name, "remember_requested": remembered, "memory_persisted": False, "message": "Sesión cerrada. No se persistió memoria automáticamente."}, args.json)
-            return 0
-        raise ValueError(f"Subcomando no soportado: {args.session_command}")
-    except Exception as exc:
-        emit({"ok": False, "command": "session", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_session(
+        args=args,
+        session_dir=SESSION_DIR,
+        slugify=slugify,
+        now_stamp=now_stamp,
+        resolve_existing_path=lambda raw: resolve_existing_path(raw),
+        safe_read_text=safe_read_text,
+        strip_existing_frontmatter=strip_existing_frontmatter,
+        summarize=summarize,
+        emit=emit,
+    )
 
 
 def command_capabilities(args: argparse.Namespace) -> int:
