@@ -20,6 +20,7 @@ from cli.commands.contextual_commands import (
     session_file as contextual_session_file,
 )
 from cli.commands.normalize_commands import handle_run_normalize, handle_validate
+from cli.commands.quality_commands import handle_classify, handle_link, handle_review, handle_summarize
 from cli.commands.runtime_commands import handle_ask, handle_context, handle_explain
 from cli.commands.upgrade_commands import handle_upgrade
 from cli.commands.template_commands import (
@@ -1271,166 +1272,51 @@ def command_publish(args: argparse.Namespace) -> int:
 
 
 def command_classify(args: argparse.Namespace) -> int:
-    try:
-        note = Path(args.input)
-        text = note.read_text(encoding="utf-8")
-        frontmatter = parse_frontmatter(text)
-        fm_type = frontmatter.get("type", "").strip()
-        inferred_type = infer_type(strip_existing_frontmatter(text), extract_title(text))
-        note_type = fm_type or inferred_type
-        proposed = classify(note_type, text)
-        from_frontmatter = bool(fm_type)
-        confidence = "high" if from_frontmatter else "medium"
-        alternatives: list[str] = []
-        if not from_frontmatter:
-            if note_type == "project":
-                alternatives = ["10-areas", "30-resources"]
-            elif note_type == "decision":
-                alternatives = ["20-projects", "30-resources"]
-            elif note_type == "area":
-                alternatives = ["20-projects", "30-resources"]
-            elif note_type == "resource":
-                alternatives = ["00-inbox", "20-projects"]
-            else:
-                alternatives = ["10-areas", "30-resources"]
-        rationale = (
-            f"Clasificado por frontmatter type={note_type}."
-            if from_frontmatter
-            else f"Clasificado por inferencia semántica type={note_type}; revisar alternativas."
-        )
-        emit(
-            {
-                "ok": True,
-                "command": "classify",
-                "input": str(note),
-                "proposed_destination": proposed,
-                "confidence": confidence,
-                "alternatives": alternatives,
-                "rationale": rationale,
-                "warnings": [],
-                "errors": [],
-                "message": f"Destino propuesto: {proposed}",
-            },
-            args.json,
-        )
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "classify", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_classify(
+        args=args,
+        parse_frontmatter=parse_frontmatter,
+        infer_type=infer_type,
+        strip_existing_frontmatter=strip_existing_frontmatter,
+        extract_title=extract_title,
+        classify=classify,
+        emit=emit,
+    )
 
 
 def command_review(args: argparse.Namespace) -> int:
-    try:
-        if not args.input and not args.path:
-            raise ValueError("review requiere --input o --path.")
-        target = Path(args.input) if args.input else Path(args.path)
-        files = collect_markdown_files(target)
-        issues: list[dict[str, Any]] = []
-        checks = {"files": len(files), "valid_files": 0}
-        for file in files:
-            validation = validate_text(file.read_text(encoding="utf-8"), file.name)
-            if validation["ok"]:
-                checks["valid_files"] += 1
-            else:
-                issues.append({"file": str(file), "errors": validation["errors"], "warnings": validation["warnings"]})
-        ensure_runtime_dirs()
-        stamp = now_date()
-        json_report = unique_path(PREVIEW_DIR / f"{stamp}-review-report.json")
-        md_report = unique_path(PREVIEW_DIR / f"{stamp}-review-report.md")
-        payload = {"ok": not issues, "checks": checks, "issues": issues}
-        json_report.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        lines = [f"# Review Report ({stamp})", "", f"- Files: {checks['files']}", f"- Valid: {checks['valid_files']}", f"- Issues: {len(issues)}", ""]
-        for issue in issues:
-            lines.append(f"## {issue['file']}")
-            for err in issue["errors"]:
-                lines.append(f"- ERROR: {err}")
-            for warn in issue["warnings"]:
-                lines.append(f"- WARN: {warn}")
-            lines.append("")
-        md_report.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
-        emit(
-            {
-                "ok": not issues,
-                "command": "review",
-                "checks": checks,
-                "issues": issues,
-                "report_paths": {"md": str(md_report), "json": str(json_report)},
-                "warnings": [],
-                "errors": [],
-                "message": "Review ejecutado correctamente; revisar issues de calidad.",
-            },
-            args.json,
-        )
-        return 0 if not issues else 1
-    except Exception as exc:
-        emit({"ok": False, "command": "review", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_review(
+        args=args,
+        collect_markdown_files=collect_markdown_files,
+        validate_text=validate_text,
+        ensure_runtime_dirs=ensure_runtime_dirs,
+        now_date=now_date,
+        preview_dir=PREVIEW_DIR,
+        unique_path=unique_path,
+        emit=emit,
+    )
 
 
 def command_link(args: argparse.Namespace) -> int:
-    try:
-        note = Path(args.input)
-        text = note.read_text(encoding="utf-8")
-        title = extract_title(text)
-        suggested = suggest_wikilinks(strip_existing_frontmatter(text), title)
-        missing = [f"[[{item}]]" for item in suggested]
-        emit(
-            {
-                "ok": True,
-                "command": "link",
-                "mode": "preview" if args.preview else "analysis",
-                "input": str(note),
-                "suggested_links": [f"[[{item}]]" for item in suggested],
-                "missing_targets": missing,
-                "rationale": "Sugerencias por headings y entidades detectadas localmente.",
-                "warnings": [],
-                "errors": [],
-                "message": "Sugerencias de enlaces generadas sin persistencia.",
-            },
-            args.json,
-        )
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "link", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_link(
+        args=args,
+        extract_title=extract_title,
+        suggest_wikilinks=suggest_wikilinks,
+        strip_existing_frontmatter=strip_existing_frontmatter,
+        emit=emit,
+    )
 
 
 def command_summarize(args: argparse.Namespace) -> int:
-    try:
-        if not args.input and not args.path:
-            raise ValueError("summarize requiere --input o --path.")
-        if args.input and args.path:
-            raise ValueError("Usa solo uno: --input o --path.")
-        sources = collect_markdown_files(Path(args.input) if args.input else Path(args.path))
-        if not sources:
-            raise ValueError("No se encontraron archivos Markdown para resumir.")
-        snippets: list[str] = []
-        for source in sources[:20]:
-            text = source.read_text(encoding="utf-8")
-            snippets.append(f"- {source.name}: {summarize(strip_existing_frontmatter(text))}")
-        summary_text = "\n".join(snippets)
-        output_path = Path(args.output) if args.output else unique_path(PREVIEW_DIR / f"{now_date()}-summary.md")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text("# Summary\n\n" + summary_text + "\n", encoding="utf-8")
-        emit(
-            {
-                "ok": True,
-                "command": "summarize",
-                "output_path": str(output_path),
-                "sources": [str(item) for item in sources],
-                "summary": summary_text,
-                "decisions": [],
-                "pending_items": [],
-                "warnings": [],
-                "errors": [],
-                "message": f"Resumen generado: {output_path}",
-            },
-            args.json,
-        )
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "summarize", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_summarize(
+        args=args,
+        collect_markdown_files=collect_markdown_files,
+        summarize=summarize,
+        strip_existing_frontmatter=strip_existing_frontmatter,
+        now_date=now_date,
+        preview_dir=PREVIEW_DIR,
+        unique_path=unique_path,
+        emit=emit,
+    )
 
 
 def command_query(args: argparse.Namespace) -> int:
