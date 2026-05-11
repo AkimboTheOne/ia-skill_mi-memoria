@@ -1,6 +1,6 @@
 # mi-memoria
 
-![version](https://img.shields.io/badge/version-v0.4.1-blue)
+![version](https://img.shields.io/badge/version-v0.4.2-blue)
 ![maturity](https://img.shields.io/badge/maturity-p4--stable-brightgreen)
 ![tests](https://img.shields.io/badge/tests-make%20test%20passing-success)
 ![license](https://img.shields.io/badge/license-not%20declared-lightgrey)
@@ -8,7 +8,7 @@
 
 Runtime local de skills para operar sobre repositorios de conocimiento Markdown, separado del vault de conocimiento.
 
-`mi-memoria` v0.4.1 implementa baseline + P1/P2/P3/P4 (hardening):
+`mi-memoria` v0.4.2 implementa baseline + P1/P2/P3/P4 (hardening):
 
 - CLI local sin dependencias externas obligatorias.
 - Skill `normalize` para convertir texto o Markdown libre en notas Obsidian consistentes.
@@ -84,7 +84,7 @@ Ubicaciones comunes según agente:
 
 Para que un agente reconozca la habilidad, el archivo `SKILL.md` debe quedar en la raíz de la carpeta del skill.
 
-## Capacidades actuales v0.4.1
+## Capacidades actuales v0.4.2
 
 La fuente operativa para capacidades actuales es:
 
@@ -173,11 +173,13 @@ Con el vault configurado, `remember` escribe por defecto en `memory/` del vault.
 
 Las plantillas del vault tienen prioridad. Si falta una plantilla primitiva del vault, el runtime usa la plantilla CORE de `skills/core/templates` y emite un warning recomendando restaurarla con `scripts/skill_setup.sh` o crear una plantilla propia.
 
-`template generate` crea previews en `workspace/preview/templates`. `template apply` copia esos previews a `vault/templates` solo si el destino no existe.
+`template generate` crea previews en `workspace/preview/templates`. `template apply` copia esos previews a `vault/templates` solo si el destino no existe. `template sync` sincroniza faltantes CORE al vault en modo seguro y reporta diferencias sin sobrescribir.
+
+`capabilities --json` expone metadata por comando para agentes. La fuente canónica es `skill-manifest.json` (raíz) y se mantiene un espejo idéntico en `docs/skill-manifest.json` por compatibilidad transitoria.
 
 ## P5 readiness (aún no ejecutada)
 
-P5 (interoperabilidad controlada) sigue diferida. En `v0.4.1` no existe bridge MCP ni servidor HTTPS activo.
+P5 (interoperabilidad controlada) sigue diferida. En `v0.4.2` no existe bridge MCP ni servidor HTTPS activo.
 
 Gates previos obligatorios para iniciar P5:
 

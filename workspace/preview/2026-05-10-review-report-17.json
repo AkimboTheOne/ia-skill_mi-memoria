@@ -1,0 +1,25 @@
+{
+  "ok": false,
+  "checks": {
+    "files": 1,
+    "valid_files": 0
+  },
+  "issues": [
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/tmp/tests/tmpmmuwydv5/2026-01-01-nota.md",
+      "errors": [
+        "Falta frontmatter requerido: title",
+        "Falta frontmatter requerido: type",
+        "Falta frontmatter requerido: status",
+        "Falta frontmatter requerido: created",
+        "Falta frontmatter requerido: updated",
+        "Falta frontmatter requerido: tags",
+        "Falta sección requerida: Resumen",
+        "Falta sección requerida: Desarrollo",
+        "Falta sección requerida: Relaciones",
+        "Falta sección requerida: Pendientes"
+      ],
+      "warnings": []
+    }
+  ]
+}

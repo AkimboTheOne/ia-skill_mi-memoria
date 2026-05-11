@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "command": "curate",
+  "mode": "preview",
+  "input_path": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/tmp/tests/tmpfcxuj0zc",
+  "report_paths": {
+    "md": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/preview/2026-05-10-curation-report-10.md",
+    "json": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/preview/2026-05-10-curation-report-10.json"
+  },
+  "issues": {
+    "weak_notes": [
+      {
+        "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/tmp/tests/tmpfcxuj0zc/note.md",
+        "reason": "contenido breve"
+      }
+    ],
+    "potential_duplicates": [],
+    "redundant_tags": [],
+    "orphan_notes": [
+      {
+        "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/tmp/tests/tmpfcxuj0zc/note.md"
+      }
+    ],
+    "stale_notes": []
+  },
+  "warnings": [],
+  "errors": [],
+  "message": "Curate ejecutado correctamente; plan generado sin mutaciones."
+}

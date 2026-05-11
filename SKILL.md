@@ -9,6 +9,11 @@ description: Use this runtime when the user wants to organize, normalize, valida
 
 Usa este runtime cuando el usuario quiera organizar, normalizar, validar o recordar conocimiento Markdown para un vault Obsidian externo.
 
+Contextualización para agentes (obligatoria):
+- Primero cargar `skill-manifest.json` en la raíz para entender comandos, contratos y metadata (`command_metadata`) sin explorar el código.
+- Usar `docs/skill-manifest.json` solo como fallback de compatibilidad si el canónico no está disponible.
+- Recurrir a lectura de módulos Python solo cuando el manifiesto no alcance para resolver la tarea.
+
 Activaciones naturales:
 
 - "Organiza esta nota."
@@ -44,6 +49,7 @@ Activación CLI:
 ./bin/mi-memoria validate --input note.md
 ./bin/mi-memoria template list --json
 ./bin/mi-memoria template generate --name log-diario --type note --description "Registro diario de eventos" --preview
+./bin/mi-memoria template sync --vault-path /path/to/vault --json
 ./bin/mi-memoria apply --input workspace/preview/note.md --vault-path /path/to/vault
 ./bin/mi-memoria remember --summary "..." --vault-path /path/to/vault
 ./bin/mi-memoria remember --type decision --summary "..." --vault-path /path/to/vault
@@ -79,6 +85,7 @@ Activación CLI:
 - `context`: mostrar contexto operacional del runtime y workspace visible del vault cuando exista.
 - `capabilities`: exponer el contrato operativo actual del CLI.
 - `capabilities`: exponer también versión y madurez operativa.
+- `capabilities`: exponer metadata por comando para carga rápida de agentes (fuente canónica: `skill-manifest.json` en raíz; espejo compatible: `docs/skill-manifest.json`).
 - `upgrade`: actualizar el runtime del skill con `git pull --ff-only` acotado a este repo.
 
 ## Capacidades planeadas

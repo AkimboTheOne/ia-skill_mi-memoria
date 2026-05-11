@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+## v0.4.2
+
+- Manifiesto machine-first canónico movido a `skill-manifest.json` (raíz) con espejo idéntico en `docs/skill-manifest.json` para compatibilidad transitoria.
+- Runtime de `capabilities` ahora resuelve manifiesto con prioridad en raíz y fallback compatible a `docs/`.
+- Coherencia reforzada por pruebas: metadata por comando completa y paridad estructural exacta entre manifiesto canónico y espejo.
+- Documentación alineada (`README.md`, `SKILL.md`, `docs/usage.md`, `docs/architecture.md`, `AGENTS.md`) con reglas de contextualización para agentes.
+- Memoria de iteración pre‑P5 añadida en `docs/memoria-iteracion-pre-p5.md`.
+- Charter baseline histórico reubicado desde raíz a `docs/roadmap/mi-memoria-charter-baseline-v0.1.md`.
+
+## pre-p5-madurez (histórico de trabajo)
+
+- `template sync` agrega sincronización segura de plantillas CORE hacia `vault/templates` (solo faltantes, sin sobrescritura) con reportes `.md` + `.json`.
+- `capabilities --json` incorpora metadata por comando orientada a carga rápida de contexto por LLM.
+- Se define `skill-manifest.json` (raíz) como fuente canónica machine-first para capacidades y metadatos operacionales, manteniendo `docs/skill-manifest.json` como espejo de compatibilidad.
+- Refactor modular inicial: extracción de metadata/capabilities (`cli/core/metadata.py`) y servicios de `template sync`/`upgrade` (`cli/services/*`) sin romper contratos CLI.
+- Telemetría operacional liviana: se añade `logs/operations.jsonl` en paralelo al log textual existente para trazabilidad orientada a interpretación por LLM.
+- Refactor por capa `commands`: `template sync`, `upgrade`, `capabilities` y el resto de subcomandos `template` delegan desde `cli/main.py` a handlers modulares manteniendo contratos JSON y retro-compatibilidad.
+- Refactor por capa `commands` extendido: `context`, `explain`, `ask`, `run normalize` y `validate` también delegan a handlers modulares, manteniendo contratos operativos y pruebas existentes.
+- Refactor contextual/calidad: `session`, `query`, `context-build`, `classify`, `review`, `link` y `summarize` delegan a módulos `commands` especializados con pruebas retro-compatibles en verde.
+- Refactor productivo inicial: `capture`, `daily` y `decision` delegan en `cli/commands/production_commands.py` manteniendo contratos JSON y cobertura de pruebas existente.
+- Refactor analítico/safeguard: `index`, `timeline`, `drift-detection`, `curate`, `publish`, `remember`, `archive` y `apply` delegan en módulos `commands` dedicados.
+- Se refuerza la coherencia del manifiesto con pruebas: metadata completa por comando en `capabilities --json` y paridad estructural exacta entre `skill-manifest.json` (raíz) y `docs/skill-manifest.json` (espejo).
+
 ## v0.4.1
 
 - Hardening de madurez P4 previo a P5 (sin ejecutar interoperabilidad).

@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "command": "context-build",
+  "scope": "/private/tmp/mi-memoria-smoke.nFYUNA",
+  "topic": "prueba",
+  "selection_criteria": {
+    "topic": true,
+    "max_files": 10
+  },
+  "sources": [
+    {
+      "file": "/private/tmp/mi-memoria-smoke.nFYUNA/note.md",
+      "title": "Nota",
+      "reason": "topic-match",
+      "excerpt": "Nota Contenido de prueba."
+    }
+  ],
+  "artifacts": {
+    "md": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/exports/2026-05-10-context-pack-4.md",
+    "json": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/exports/2026-05-10-context-pack-4.json",
+    "source_map": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/exports/2026-05-10-context-pack-4-source-map.json"
+  }
+}

@@ -22,6 +22,7 @@
 - Entry point CLI: `bin/mi-memoria` y parser/comandos en `cli/main.py`.
 - Suite de pruebas: `tests/test_cli.py` (ejecutar con `make test`).
 - Plantillas CORE: `skills/core/templates/*.md`.
+- Manifiesto machine-first canónico: `skill-manifest.json` (raíz). Espejo transitorio: `docs/skill-manifest.json` (deben permanecer idénticos).
 - Setup mínimo de vault: `scripts/skill_setup.sh`.
 - Historial de cambios funcionales: revisar `CHANGELOG.md` antes de diseñar/refactorizar.
 

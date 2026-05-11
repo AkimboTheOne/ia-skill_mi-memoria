@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "command": "curate",
+  "mode": "preview",
+  "input_path": "/private/tmp/mi-memoria-smoke.4RMljQ",
+  "report_paths": {
+    "md": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/preview/2026-05-10-curation-report-4.md",
+    "json": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/workspace/preview/2026-05-10-curation-report-4.json"
+  },
+  "issues": {
+    "weak_notes": [
+      {
+        "file": "/private/tmp/mi-memoria-smoke.4RMljQ/note.md",
+        "reason": "contenido breve"
+      }
+    ],
+    "potential_duplicates": [],
+    "redundant_tags": [],
+    "orphan_notes": [
+      {
+        "file": "/private/tmp/mi-memoria-smoke.4RMljQ/note.md"
+      }
+    ],
+    "stale_notes": []
+  },
+  "warnings": [],
+  "errors": [],
+  "message": "Plan de curaduría generado sin mutaciones."
+}
