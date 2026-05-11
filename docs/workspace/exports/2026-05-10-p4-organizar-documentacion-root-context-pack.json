@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "command": "context-build",
+  "scope": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/README.md",
+  "topic": null,
+  "selection_criteria": {
+    "topic": false,
+    "max_files": 10
+  },
+  "sources": [
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/README.md",
+      "title": "mi-memoria",
+      "reason": "scope",
+      "excerpt": "mi-memoria ![version](https://img.shields.io/badge/version-v0.4.2-blue) ![maturity](https://img.shields.io/badge/maturity-p4--stable-brightgreen) ![tests](https://img.shields.io/badge/tests-make%20test%20passing-success) ![license](https://"
+    }
+  ],
+  "artifacts": {
+    "md": "docs/workspace/exports/2026-05-10-p4-organizar-documentacion-root-context-pack.md",
+    "json": "docs/workspace/exports/2026-05-10-p4-organizar-documentacion-root-context-pack.json",
+    "source_map": "docs/workspace/exports/2026-05-10-p4-organizar-documentacion-root-context-pack-source-map.json"
+  }
+}

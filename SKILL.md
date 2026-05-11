@@ -27,7 +27,27 @@ Alias de activación:
 - `/mi-memoria`
 - `/mem`
 
-Activación CLI:
+### Activación en `prompt`
+
+Usa este formato cuando el usuario esté en un agente conversacional o coding CLI que cargue el skill.
+
+```prompt
+/mi-memoria capture "Idea rápida"
+/mem review --path workspace/inbox
+$mi-memoria summarize --path workspace/inbox
+$mem context-build --topic "arquitectura local"
+```
+
+```prompt
+Organiza esta nota.
+Normaliza esta idea sobre arquitectura.
+Clasifica este Markdown.
+Guarda esta decisión como memoria.
+```
+
+### Comandos técnicos en `bash`
+
+Usa este formato para el contrato técnico ejecutable y verificable.
 
 ```bash
 ./bin/mi-memoria capabilities --json
@@ -87,6 +107,16 @@ Activación CLI:
 - `capabilities`: exponer también versión y madurez operativa.
 - `capabilities`: exponer metadata por comando para carga rápida de agentes (fuente canónica: `skill-manifest.json` en raíz; espejo compatible: `docs/skill-manifest.json`).
 - `upgrade`: actualizar el runtime del skill con `git pull --ff-only` acotado a este repo.
+
+## Documentación de usuario
+
+La documentación curada para usuarios vive en el vault del proyecto, dentro de `docs/30-resources/mi-memoria/`.
+
+- [Hub de documentación de usuario](docs/30-resources/mi-memoria/index.md)
+- [Gobernanza documental](docs/documentation-governance.md)
+- [Memoria curada del vault](docs/memory/README.md)
+- [Taxonomía documental](docs/memory/conventions/documentation-taxonomy.md)
+- [Estilo editorial](docs/memory/conventions/editorial-style.md)
 
 ## Capacidades planeadas
 

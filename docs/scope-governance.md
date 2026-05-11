@@ -1,4 +1,4 @@
-# Gobierno de Scope
+# Gobierno de scope
 
 ## Incluido en v0.1
 

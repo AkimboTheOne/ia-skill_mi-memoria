@@ -1,0 +1,223 @@
+{
+  "main": {
+    "id": "c4596641ad8e4ded",
+    "type": "split",
+    "children": [
+      {
+        "id": "55bae3aa9be782b9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "02c28b0d9a42e9bd",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "20-projects/documentation-conventions.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "documentation-conventions"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2d844f253ab7d643",
+    "type": "split",
+    "children": [
+      {
+        "id": "3004242f7cc97eda",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d18d486ea3f64c62",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de archivos"
+            }
+          },
+          {
+            "id": "3c13dc02b44944ab",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Buscar"
+            }
+          },
+          {
+            "id": "cb454b6931f2361f",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 521.5
+  },
+  "right": {
+    "id": "d71e230dd0eab4a8",
+    "type": "split",
+    "children": [
+      {
+        "id": "5ec73c0a8aea207b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e3afd43dcc38e0f1",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "20-projects/documentation-conventions.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Enlaces entrantes de documentation-conventions"
+            }
+          },
+          {
+            "id": "d194705a10868955",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "20-projects/documentation-conventions.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Enlaces salientes de documentation-conventions"
+            }
+          },
+          {
+            "id": "3bfa655e7dfaf8e1",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "7768eeddcfbdec0b",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas las propiedades"
+            }
+          },
+          {
+            "id": "a2771da9841f2023",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "20-projects/documentation-conventions.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Esquema de documentation-conventions"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir selector rápido": false,
+      "graph:Abrir vista gráfica": false,
+      "canvas:Crear nuevo lienzo": false,
+      "daily-notes:Abrir la nota de hoy": false,
+      "templates:Insertar plantilla": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Crear nueva base": false
+    }
+  },
+  "active": "02c28b0d9a42e9bd",
+  "lastOpenFiles": [
+    "30-resources/mi-memoria/overview.md",
+    "20-projects/documentation-conventions.md",
+    "20-projects/README.md",
+    "memory/conventions/documentation-iteration-plan.md",
+    "30-resources/mi-memoria/workflows.md",
+    "30-resources/mi-memoria/manifests.md",
+    "30-resources/mi-memoria/commands.md",
+    "30-resources/mi-memoria/index.md",
+    "memory/2026-05-10-se-racionalizo-el-historico-de-roadmap-de-mi-memoria-en-un-m.md",
+    "memory/2026-05-10-se-construyeron-dos-context-packs-dentro-del-vault-para-orga.md",
+    "memory/2026-05-10-en-el-dominio-roadmap-de-mi-memoria-se-adopto-una-nomenclatu.md",
+    "memory/conventions/README.md",
+    "memory/conventions/editorial-style.md",
+    "memory/conventions/documentation-taxonomy.md",
+    "activation.md",
+    "memory/roadmap/evolution-plan.md",
+    "memory/roadmap/README.md",
+    "memory/roadmap/roadmap-maestro.md",
+    "memory/roadmap/charter-baseline.md",
+    "30-resources/README.md",
+    "30-resources/mi-memoria/troubleshooting.md",
+    "30-resources/mi-memoria/quickstart.md",
+    "workspace/README.md",
+    "30-resources/mi-memoria",
+    "templates/product-guide.md",
+    "architecture.md",
+    "memory/conventions",
+    "indexes/README.md",
+    "memory/roadmap",
+    "workspace/preview/roadmap",
+    "workspace/exports/2026-05-10-p4-organizar-documentacion-docs-context-pack-source-map.json",
+    "workspace/exports/2026-05-10-p4-organizar-documentacion-docs-context-pack.json",
+    "workspace/exports/2026-05-10-p4-organizar-documentacion-root-context-pack-source-map.json",
+    "workspace/exports/2026-05-10-p4-organizar-documentacion-root-context-pack.json"
+  ]
+}
