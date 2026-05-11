@@ -14,7 +14,14 @@ from typing import Any
 
 from cli.commands.capabilities_commands import handle_capabilities
 from cli.commands.upgrade_commands import handle_upgrade
-from cli.commands.template_commands import handle_template_sync
+from cli.commands.template_commands import (
+    handle_template_apply,
+    handle_template_generate,
+    handle_template_list,
+    handle_template_show,
+    handle_template_sync,
+    handle_template_validate,
+)
 from cli.infra.git_tools import run_git_command as infra_run_git_command
 from cli.infra.telemetry import append_operation_logs
 from cli.services.template_sync import sync_templates_safe
@@ -1727,151 +1734,55 @@ def command_validate(args: argparse.Namespace) -> int:
 
 
 def command_template_list(args: argparse.Namespace) -> int:
-    vault = resolve_vault_path(args.vault_path) if args.vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH") else None
-    core = list_template_files(CORE_TEMPLATE_DIR)
-    vault_templates = list_template_files(vault / "templates") if vault else []
-    emit(
-        {
-            "ok": True,
-            "command": "template list",
-            "core": core,
-            "vault": vault_templates,
-            "message": f"Templates CORE: {len(core)}; vault: {len(vault_templates)}",
-        },
-        args.json,
+    return handle_template_list(
+        args=args,
+        list_template_files=list_template_files,
+        core_template_dir=CORE_TEMPLATE_DIR,
+        resolve_vault_path=resolve_vault_path,
+        emit=emit,
     )
-    return 0
 
 
 def command_template_show(args: argparse.Namespace) -> int:
-    try:
-        vault = resolve_vault_path(args.vault_path) if args.vault_path or os.environ.get("MI_MEMORIA_VAULT_PATH") else None
-        template = resolve_template(args.name, vault)
-        emit(
-            {
-                "ok": True,
-                "command": "template show",
-                "template": {
-                    "name": args.name,
-                    "source": template["source"],
-                    "path": template["path"],
-                },
-                "content": template["content"],
-                "warnings": template["warnings"],
-                "message": f"Template efectivo: {template['path']}",
-            },
-            args.json,
-        )
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_template_show(
+        args=args,
+        resolve_template=resolve_template,
+        resolve_vault_path=resolve_vault_path,
+        emit=emit,
+    )
 
 
 def command_template_generate(args: argparse.Namespace) -> int:
-    if not args.preview:
-        emit({"ok": False, "message": "template generate requiere --preview.", "errors": ["Modo preview requerido."]}, args.json)
-        return 2
-    try:
-        input_text = None
-        input_name = ""
-        if args.input:
-            input_path = Path(args.input)
-            input_text = input_path.read_text(encoding="utf-8")
-            input_name = input_path.name
-        generated = build_template_content(args.name, args.type, input_text, input_name, args.description)
-        ensure_runtime_dirs()
-        output = unique_path(TEMPLATE_PREVIEW_DIR / f"{slugify(args.name)}.md")
-        output.write_text(generated["content"], encoding="utf-8")
-        log_operation("template.generate.preview", args.input or "inline", str(output), "ok")
-        emit(
-            {
-                "ok": True,
-                "command": "template generate",
-                "mode": "preview",
-                "output_path": str(output),
-                "template": generated["template"],
-                "warnings": generated["warnings"] + generated["validation"]["warnings"],
-                "validation": generated["validation"],
-                "message": f"Preview de template generado: {output}",
-            },
-            args.json,
-        )
-        return 0 if generated["validation"]["ok"] else 1
-    except Exception as exc:
-        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_template_generate(
+        args=args,
+        build_template_content=build_template_content,
+        ensure_runtime_dirs=ensure_runtime_dirs,
+        template_preview_dir=TEMPLATE_PREVIEW_DIR,
+        unique_path=unique_path,
+        slugify=slugify,
+        log_operation=log_operation,
+        emit=emit,
+    )
 
 
 def command_template_validate(args: argparse.Namespace) -> int:
-    try:
-        path = Path(args.input)
-        result = validate_template_text(path.read_text(encoding="utf-8"), path.name)
-        emit(
-            {
-                "ok": result["ok"],
-                "command": "template validate",
-                "input": str(path),
-                "errors": result["errors"],
-                "warnings": result["warnings"],
-                "checks": result["checks"],
-                "message": "Template válido." if result["ok"] else "Template inválido.",
-            },
-            args.json,
-        )
-        return 0 if result["ok"] else 1
-    except Exception as exc:
-        emit({"ok": False, "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_template_validate(
+        args=args,
+        validate_template_text=validate_template_text,
+        emit=emit,
+    )
 
 
 def command_template_apply(args: argparse.Namespace) -> int:
-    try:
-        source = Path(args.input).resolve()
-        preview_root = TEMPLATE_PREVIEW_DIR.resolve()
-        if preview_root != source and preview_root not in source.parents:
-            raise ValueError("template apply solo acepta archivos dentro de workspace/preview/templates.")
-        if source.suffix != ".md" or not source.is_file():
-            raise ValueError("El input de template apply debe ser un archivo Markdown existente.")
-        text = source.read_text(encoding="utf-8")
-        validation = validate_template_text(text, source.name)
-        if not validation["ok"]:
-            emit(
-                {
-                    "ok": False,
-                    "command": "template apply",
-                    "input": str(source),
-                    "errors": validation["errors"],
-                    "warnings": validation["warnings"],
-                    "checks": validation["checks"],
-                    "message": "No se aplicó porque el template no valida.",
-                },
-                args.json,
-            )
-            return 1
-        vault = resolve_vault_path(args.vault_path)
-        destination = vault / "templates" / source.name
-        ensure_inside(vault, destination)
-        if destination.exists():
-            raise ValueError(f"Template ya existe y no se sobrescribe: {destination}")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-        log_operation("template.apply", str(source), str(destination), "ok")
-        emit(
-            {
-                "ok": True,
-                "command": "template apply",
-                "input": str(source),
-                "output_path": str(destination),
-                "validation": validation,
-                "message": f"Template aplicado al vault: {destination}",
-            },
-            args.json,
-        )
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "template apply", "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_template_apply(
+        args=args,
+        template_preview_dir=TEMPLATE_PREVIEW_DIR,
+        validate_template_text=validate_template_text,
+        resolve_vault_path=resolve_vault_path,
+        ensure_inside=ensure_inside,
+        log_operation=log_operation,
+        emit=emit,
+    )
 
 
 def command_template_sync(args: argparse.Namespace) -> int:
