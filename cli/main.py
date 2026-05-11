@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from cli.core.metadata import build_capabilities_payload
+from cli.commands.template_commands import handle_template_sync
 from cli.infra.git_tools import run_git_command as infra_run_git_command
 from cli.infra.telemetry import append_operation_logs
 from cli.services.template_sync import sync_templates_safe
@@ -1875,40 +1876,17 @@ def command_template_apply(args: argparse.Namespace) -> int:
 
 
 def command_template_sync(args: argparse.Namespace) -> int:
-    try:
-        vault = resolve_vault_path(args.vault_path)
-        vault_templates_dir = vault / "templates"
-        ensure_inside(vault, vault_templates_dir)
-        report_md = Path(args.report) if args.report else unique_path(PREVIEW_DIR / f"{now_date()}-template-sync-report.md")
-        report_json = report_md.with_suffix(".json")
-        sync_data = sync_templates_safe(
-            core_templates_dir=CORE_TEMPLATE_DIR,
-            vault_templates_dir=vault_templates_dir,
-            report_md_path=report_md,
-            date_fn=now_date,
-        )
-
-        payload = {
-            "ok": True,
-            "command": "template sync",
-            "mode": sync_data["mode"],
-            "vault_path": str(vault),
-            "artifacts": {"md": str(report_md), "json": str(report_json)},
-            "summary": sync_data["summary"],
-            "added": sync_data["added"],
-            "missing_before_sync": sync_data["missing_before_sync"],
-            "skipped": sync_data["skipped"],
-            "outdated": sync_data["outdated"],
-            "errors": [],
-            "warnings": sync_data["warnings"],
-            "message": "Sincronización de plantillas completada en modo seguro.",
-        }
-        report_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        emit(payload, args.json)
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "template sync", "message": str(exc), "errors": [str(exc)]}, args.json)
-        return 2
+    return handle_template_sync(
+        args=args,
+        resolve_vault_path=resolve_vault_path,
+        ensure_inside=ensure_inside,
+        preview_dir=PREVIEW_DIR,
+        unique_path=unique_path,
+        now_date=now_date,
+        core_template_dir=CORE_TEMPLATE_DIR,
+        sync_templates_safe=sync_templates_safe,
+        emit=emit,
+    )
 
 
 def command_remember(args: argparse.Namespace) -> int:
