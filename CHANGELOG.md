@@ -9,6 +9,7 @@
 - Telemetría operacional liviana: se añade `logs/operations.jsonl` en paralelo al log textual existente para trazabilidad orientada a interpretación por LLM.
 - Refactor por capa `commands`: `template sync`, `upgrade`, `capabilities` y el resto de subcomandos `template` delegan desde `cli/main.py` a handlers modulares manteniendo contratos JSON y retro-compatibilidad.
 - Refactor por capa `commands` extendido: `context`, `explain`, `ask`, `run normalize` y `validate` también delegan a handlers modulares, manteniendo contratos operativos y pruebas existentes.
+- Refactor contextual/calidad: `session`, `query`, `context-build`, `classify`, `review`, `link` y `summarize` delegan a módulos `commands` especializados con pruebas retro-compatibles en verde.
 
 ## v0.4.1
 
