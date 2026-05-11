@@ -5,6 +5,8 @@
 - `template sync` agrega sincronización segura de plantillas CORE hacia `vault/templates` (solo faltantes, sin sobrescritura) con reportes `.md` + `.json`.
 - `capabilities --json` incorpora metadata por comando orientada a carga rápida de contexto por LLM.
 - Se introduce `docs/skill-manifest.json` como fuente canónica machine-first para capacidades y metadatos operacionales.
+- Refactor modular inicial: extracción de metadata/capabilities (`cli/core/metadata.py`) y servicios de `template sync`/`upgrade` (`cli/services/*`) sin romper contratos CLI.
+- Telemetría operacional liviana: se añade `logs/operations.jsonl` en paralelo al log textual existente para trazabilidad orientada a interpretación por LLM.
 
 ## v0.4.1
 

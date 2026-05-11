@@ -4,6 +4,10 @@
 
 El runtime contiene CLI, skills, workspace transitorio, harnesses, logs y memoria operacional interna del skill. El vault contiene conocimiento: notas, assets, templates, índices, memoria consolidada del proyecto y un workspace curatorial visible desde Obsidian.
 
+La telemetría operacional del runtime mantiene dos salidas livianas:
+- `logs/operations.log` (texto legible)
+- `logs/operations.jsonl` (eventos estructurados con mensaje natural simplificado para agentes/LLM)
+
 ## Regla central
 
 El runtime opera sobre el vault, nunca dentro del vault. La escritura final al vault requiere `--write` o `apply`.

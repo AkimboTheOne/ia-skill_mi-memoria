@@ -13,7 +13,9 @@ from pathlib import Path
 from typing import Any
 
 from cli.core.metadata import build_capabilities_payload
+from cli.infra.telemetry import append_operation_logs
 from cli.services.template_sync import sync_templates_safe
+from cli.services.upgrade_service import execute_upgrade
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +25,7 @@ TEMPLATE_PREVIEW_DIR = PREVIEW_DIR / "templates"
 VAULT_WORKSPACE = Path("workspace")
 VAULT_PREVIEW_DIR = VAULT_WORKSPACE / "preview"
 LOG_FILE = ROOT / "logs" / "operations.log"
+LOG_JSONL_FILE = ROOT / "logs" / "operations.jsonl"
 CORE_TEMPLATE_DIR = ROOT / "skills" / "core" / "templates"
 
 REQUIRED_FIELDS = ["title", "type", "status", "created", "updated", "tags"]
@@ -142,9 +145,15 @@ def emit(data: dict[str, Any], as_json: bool) -> None:
 
 def log_operation(action: str, source: str, destination: str, result: str) -> None:
     ensure_runtime_dirs()
-    line = f"{now_stamp()}\taction={action}\tsource={source}\tdestination={destination}\tresult={result}\n"
-    with LOG_FILE.open("a", encoding="utf-8") as handle:
-        handle.write(line)
+    append_operation_logs(
+        text_log_path=LOG_FILE,
+        jsonl_log_path=LOG_JSONL_FILE,
+        timestamp=now_stamp(),
+        action=action,
+        source=source,
+        destination=destination,
+        result=result,
+    )
 
 
 def read_text_input(input_path: str | None, inline_text: str | None = None) -> tuple[str, str]:
@@ -591,68 +600,9 @@ def run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def command_upgrade(args: argparse.Namespace) -> int:
-    runtime = str(ROOT)
-    command = ["git", "-C", runtime, "pull", "--ff-only"]
-    try:
-        git_dir = run_git_command(["git", "-C", runtime, "rev-parse", "--git-dir"])
-        if git_dir.returncode != 0:
-            emit(
-                {
-                    "ok": False,
-                    "command": "upgrade",
-                    "runtime": runtime,
-                    "stdout": git_dir.stdout,
-                    "stderr": git_dir.stderr,
-                    "returncode": git_dir.returncode,
-                    "message": "No se pudo actualizar: el runtime no está dentro de un repositorio Git.",
-                },
-                args.json,
-            )
-            return 2
-        remote = run_git_command(["git", "-C", runtime, "remote", "get-url", "origin"])
-        if remote.returncode != 0:
-            emit(
-                {
-                    "ok": False,
-                    "command": "upgrade",
-                    "runtime": runtime,
-                    "stdout": remote.stdout,
-                    "stderr": remote.stderr,
-                    "returncode": remote.returncode,
-                    "message": "No se pudo actualizar: el runtime no tiene remoto origin configurado.",
-                },
-                args.json,
-            )
-            return 2
-        result = run_git_command(command)
-        ok = result.returncode == 0
-        emit(
-            {
-                "ok": ok,
-                "command": "upgrade",
-                "runtime": runtime,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "returncode": result.returncode,
-                "message": "Skill actualizado con git pull --ff-only." if ok else "No se pudo actualizar el skill con git pull --ff-only.",
-            },
-            args.json,
-        )
-        return 0 if ok else 1
-    except FileNotFoundError as exc:
-        emit(
-            {
-                "ok": False,
-                "command": "upgrade",
-                "runtime": runtime,
-                "stdout": "",
-                "stderr": str(exc),
-                "returncode": 127,
-                "message": "No se pudo actualizar: Git no está disponible.",
-            },
-            args.json,
-        )
-        return 2
+    exit_code, payload = execute_upgrade(runtime_root=ROOT, runner=run_git_command)
+    emit(payload, args.json)
+    return exit_code
 
 
 def collect_markdown_files(path: Path) -> list[Path]:
