@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from cli.commands.capabilities_commands import handle_capabilities
-from cli.commands.runtime_commands import handle_context, handle_explain
+from cli.commands.runtime_commands import handle_ask, handle_context, handle_explain
 from cli.commands.upgrade_commands import handle_upgrade
 from cli.commands.template_commands import (
     handle_template_apply,
@@ -1603,32 +1603,18 @@ def command_context(args: argparse.Namespace) -> int:
 
 
 def command_ask(args: argparse.Namespace) -> int:
-    text = args.text
-    lowered = text.lower()
-    if any(term in lowered for term in ["normaliza", "organiza", "clasifica", "nota estructurada", "markdown"]):
-        normalized = normalize_markdown(text, "ask")
-        ensure_runtime_dirs()
-        vault = resolve_optional_vault_path()
-        if vault:
-            ensure_vault_workspace_dirs(vault)
-            destination = unique_path(vault / VAULT_PREVIEW_DIR / normalized["filename"])
-        else:
-            destination = unique_path(PREVIEW_DIR / normalized["filename"])
-        destination.write_text(normalized["content"], encoding="utf-8")
-        log_operation("ask.normalize.preview", "inline", str(destination), "ok")
-        emit(
-            {
-                "ok": True,
-                "message": f"Preview generado: {destination}",
-                "output_path": str(destination),
-                "classification": normalized["classification"],
-                "validation": normalized["validation"],
-            },
-            args.json,
-        )
-        return 0
-    emit({"ok": True, "message": "No se detectó una acción automática. Usa run normalize, validate o remember."}, args.json)
-    return 0
+    return handle_ask(
+        args=args,
+        normalize_markdown=normalize_markdown,
+        ensure_runtime_dirs=ensure_runtime_dirs,
+        resolve_optional_vault_path=resolve_optional_vault_path,
+        ensure_vault_workspace_dirs=ensure_vault_workspace_dirs,
+        unique_path=unique_path,
+        vault_preview_dir=VAULT_PREVIEW_DIR,
+        runtime_preview_dir=PREVIEW_DIR,
+        log_operation=log_operation,
+        emit=emit,
+    )
 
 
 def command_run(args: argparse.Namespace) -> int:

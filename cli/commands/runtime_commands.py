@@ -55,3 +55,44 @@ def handle_context(
         args.json,
     )
     return 0
+
+
+def handle_ask(
+    *,
+    args: Any,
+    normalize_markdown: Callable[[str, str], dict[str, Any]],
+    ensure_runtime_dirs: Callable[[], None],
+    resolve_optional_vault_path: Callable[[], Path | None],
+    ensure_vault_workspace_dirs: Callable[[Path], None],
+    unique_path: Callable[[Path], Path],
+    vault_preview_dir: Path,
+    runtime_preview_dir: Path,
+    log_operation: Callable[[str, str, str, str], None],
+    emit: Callable[[dict[str, Any], bool], None],
+) -> int:
+    text = args.text
+    lowered = text.lower()
+    if any(term in lowered for term in ["normaliza", "organiza", "clasifica", "nota estructurada", "markdown"]):
+        normalized = normalize_markdown(text, "ask")
+        ensure_runtime_dirs()
+        vault = resolve_optional_vault_path()
+        if vault:
+            ensure_vault_workspace_dirs(vault)
+            destination = unique_path(vault / vault_preview_dir / normalized["filename"])
+        else:
+            destination = unique_path(runtime_preview_dir / normalized["filename"])
+        destination.write_text(normalized["content"], encoding="utf-8")
+        log_operation("ask.normalize.preview", "inline", str(destination), "ok")
+        emit(
+            {
+                "ok": True,
+                "message": f"Preview generado: {destination}",
+                "output_path": str(destination),
+                "classification": normalized["classification"],
+                "validation": normalized["validation"],
+            },
+            args.json,
+        )
+        return 0
+    emit({"ok": True, "message": "No se detectó una acción automática. Usa run normalize, validate o remember."}, args.json)
+    return 0
