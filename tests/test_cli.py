@@ -84,6 +84,31 @@ class MiMemoriaCliTests(unittest.TestCase):
             self.assertEqual(data["results"], [])
             self.assertTrue(data["uncertainty"])
 
+    def test_validate_accepts_plain_slug_filename(self) -> None:
+        with runtime_temp_dir() as tmp:
+            note = tmp / "roadmap-maestro.md"
+            note.write_text(
+                "---\n"
+                'title: "Roadmap maestro"\n'
+                "type: memory\n"
+                "status: draft\n"
+                "created: 2026-05-10\n"
+                "updated: 2026-05-10\n"
+                "tags: [mi-memoria]\n"
+                "aliases: []\n"
+                'source: "tests"\n'
+                "---\n\n"
+                "# Roadmap maestro\n\n"
+                "## Memoria\n\n"
+                "Contenido curado.",
+                encoding="utf-8",
+            )
+            result = self.run_cli("validate", "--input", str(note), "--json")
+            data = json.loads(result.stdout)
+            self.assertTrue(data["ok"])
+            self.assertEqual(data["input"], str(note))
+            self.assertEqual(data["errors"], [])
+
     def test_context_build_generates_artifacts(self) -> None:
         with runtime_temp_dir() as tmp:
             note = tmp / "a.md"

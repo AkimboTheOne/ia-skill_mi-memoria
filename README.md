@@ -177,6 +177,15 @@ Las plantillas del vault tienen prioridad. Si falta una plantilla primitiva del 
 
 `capabilities --json` expone metadata por comando para agentes. La fuente canónica es `skill-manifest.json` (raíz) y se mantiene un espejo idéntico en `docs/skill-manifest.json` por compatibilidad transitoria.
 
+## Documentación de usuario
+
+La documentación curada de usuario vive en el vault del proyecto, dentro de `docs/30-resources/mi-memoria/`. Ese hub es la referencia principal para uso, manifiestos, flujos y resolución de problemas.
+
+- [Hub de documentación de usuario](docs/30-resources/mi-memoria/index.md)
+- [Gobernanza documental](docs/documentation-governance.md)
+- [Memoria curada del vault](docs/memory/README.md)
+- [Taxonomía documental](docs/memory/conventions/documentation-taxonomy.md)
+
 ## P5 readiness (aún no ejecutada)
 
 P5 (interoperabilidad controlada) sigue diferida. En `v0.4.2` no existe bridge MCP ni servidor HTTPS activo.

@@ -88,6 +88,15 @@ Activación CLI:
 - `capabilities`: exponer metadata por comando para carga rápida de agentes (fuente canónica: `skill-manifest.json` en raíz; espejo compatible: `docs/skill-manifest.json`).
 - `upgrade`: actualizar el runtime del skill con `git pull --ff-only` acotado a este repo.
 
+## Documentación de usuario
+
+La documentación curada para usuarios vive en el vault del proyecto, dentro de `docs/30-resources/mi-memoria/`.
+
+- [Hub de documentación de usuario](docs/30-resources/mi-memoria/index.md)
+- [Gobernanza documental](docs/documentation-governance.md)
+- [Memoria curada del vault](docs/memory/README.md)
+- [Taxonomía documental](docs/memory/conventions/documentation-taxonomy.md)
+
 ## Capacidades planeadas
 
 La revisión documental y alineación contra master-plan es una capacidad propuesta, no implementada en v0.1.

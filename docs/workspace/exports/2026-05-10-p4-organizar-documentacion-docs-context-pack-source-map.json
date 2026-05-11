@@ -1,0 +1,44 @@
+{
+  "sources": [
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-charter-baseline-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-conversation-memory-evolution-rationale-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-evolution-master-plan-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-p1-consolidacion-operacional-subcharter-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-p2-gobernanza-conocimiento-subcharter-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-p3-inteligencia-contextual-subcharter-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-p4-flujos-productivos-subcharter-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/00-inbox/roadmap/mi-memoria-p5-interoperabilidad-controlada-subcharter-v0.1.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/activation.md",
+      "reason": "scope"
+    },
+    {
+      "file": "/Users/avalbuenae/Workspaces/ia-skills/ia-skill_mi-memoria/docs/architecture.md",
+      "reason": "scope"
+    }
+  ]
+}
