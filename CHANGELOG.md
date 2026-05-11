@@ -10,6 +10,7 @@
 - Refactor por capa `commands`: `template sync`, `upgrade`, `capabilities` y el resto de subcomandos `template` delegan desde `cli/main.py` a handlers modulares manteniendo contratos JSON y retro-compatibilidad.
 - Refactor por capa `commands` extendido: `context`, `explain`, `ask`, `run normalize` y `validate` también delegan a handlers modulares, manteniendo contratos operativos y pruebas existentes.
 - Refactor contextual/calidad: `session`, `query`, `context-build`, `classify`, `review`, `link` y `summarize` delegan a módulos `commands` especializados con pruebas retro-compatibles en verde.
+- Refactor productivo inicial: `capture`, `daily` y `decision` delegan en `cli/commands/production_commands.py` manteniendo contratos JSON y cobertura de pruebas existente.
 
 ## v0.4.1
 
