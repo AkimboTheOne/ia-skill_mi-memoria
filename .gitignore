@@ -10,6 +10,12 @@ __pycache__/
 dist/
 build/
 
+# Generated runtime artifacts (keep repo clean during CLI iterations)
+workspace/preview/*.md
+workspace/preview/*.json
+workspace/exports/*.md
+workspace/exports/*.json
+
 !logs/.gitkeep
 !tmp/.gitkeep
 !.env.example
