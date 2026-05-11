@@ -7,6 +7,7 @@
 - Se introduce `docs/skill-manifest.json` como fuente canónica machine-first para capacidades y metadatos operacionales.
 - Refactor modular inicial: extracción de metadata/capabilities (`cli/core/metadata.py`) y servicios de `template sync`/`upgrade` (`cli/services/*`) sin romper contratos CLI.
 - Telemetría operacional liviana: se añade `logs/operations.jsonl` en paralelo al log textual existente para trazabilidad orientada a interpretación por LLM.
+- Refactor por capa `commands`: `template sync`, `upgrade`, `capabilities` y el resto de subcomandos `template` delegan desde `cli/main.py` a handlers modulares manteniendo contratos JSON y retro-compatibilidad.
 
 ## v0.4.1
 
