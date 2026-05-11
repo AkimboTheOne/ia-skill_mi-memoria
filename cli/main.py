@@ -13,7 +13,12 @@ from pathlib import Path
 from typing import Any
 
 from cli.commands.capabilities_commands import handle_capabilities
-from cli.commands.contextual_commands import handle_session, session_file as contextual_session_file
+from cli.commands.contextual_commands import (
+    handle_context_build,
+    handle_query,
+    handle_session,
+    session_file as contextual_session_file,
+)
 from cli.commands.normalize_commands import handle_run_normalize, handle_validate
 from cli.commands.runtime_commands import handle_ask, handle_context, handle_explain
 from cli.commands.upgrade_commands import handle_upgrade
@@ -1429,103 +1434,37 @@ def command_summarize(args: argparse.Namespace) -> int:
 
 
 def command_query(args: argparse.Namespace) -> int:
-    try:
-        vault = resolve_optional_vault_path(args.vault_path)
-        raw_scope = args.path or "."
-        target, files = gather_markdown_scope(Path(raw_scope), vault)
-        matches: list[dict[str, Any]] = []
-        for file in files:
-            text = safe_read_text(file)
-            fm = parse_frontmatter(text)
-            title = fm.get("title", "").strip('"') or extract_title(text)
-            tags = parse_list_field(fm.get("tags", ""))
-            fields = {
-                "filename": file.name,
-                "title": title,
-                "tags": " ".join(tags),
-                "content": strip_existing_frontmatter(text),
-            }
-            score = sum(score_query_match(value, args.query) for value in fields.values())
-            if score <= 0:
-                continue
-            snippets = [line.strip() for line in fields["content"].splitlines() if args.query.lower() in line.lower()][:2]
-            evidence = snippets or [title]
-            matches.append({"file": str(file), "score": score, "title": title, "tags": tags, "evidence": evidence})
-        matches.sort(key=lambda item: item["score"], reverse=True)
-        limited = matches[: args.limit]
-        has_evidence = bool(limited)
-        response = {
-            "ok": True,
-            "command": "query",
-            "query": args.query,
-            "scope": str(target),
-            "results": limited,
-            "evidence": [item["file"] for item in limited],
-            "inference": (
-                "Se encontraron notas relevantes por coincidencia local en nombre/título/tags/contenido."
-                if has_evidence
-                else "No hay base para inferencias fuertes con el alcance actual."
-            ),
-            "uncertainty": "" if has_evidence else "No se encontró evidencia suficiente para responder la consulta.",
-            "message": "Consulta contextual completada." if has_evidence else "Consulta sin evidencia suficiente.",
-        }
-        emit(response, args.json)
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "query", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_query(
+        args=args,
+        resolve_optional_vault_path=resolve_optional_vault_path,
+        gather_markdown_scope=gather_markdown_scope,
+        safe_read_text=safe_read_text,
+        parse_frontmatter=parse_frontmatter,
+        extract_title=extract_title,
+        parse_list_field=parse_list_field,
+        strip_existing_frontmatter=strip_existing_frontmatter,
+        score_query_match=score_query_match,
+        emit=emit,
+    )
 
 
 def command_context_build(args: argparse.Namespace) -> int:
-    try:
-        ensure_runtime_dirs()
-        vault = resolve_optional_vault_path(args.vault_path)
-        if not args.path and not args.topic:
-            raise ValueError("context-build requiere --path o --topic.")
-        if args.path:
-            target, files = gather_markdown_scope(Path(args.path), vault)
-        else:
-            target, files = gather_markdown_scope(Path("."), vault)
-        selected: list[dict[str, Any]] = []
-        topic = (args.topic or "").lower().strip()
-        for file in files:
-            text = safe_read_text(file)
-            fm = parse_frontmatter(text)
-            title = fm.get("title", "").strip('"') or extract_title(text)
-            body = strip_existing_frontmatter(text)
-            reason = "scope"
-            if topic:
-                score = score_query_match(f"{title}\n{body}", topic)
-                if score <= 0:
-                    continue
-                reason = "topic-match"
-            selected.append({"file": str(file), "title": title, "reason": reason, "excerpt": summarize(body)})
-        selected = selected[: args.max_files]
-        stamp = now_date()
-        base = Path(args.output) if args.output else unique_path(WORKSPACE / "exports" / f"{stamp}-context-pack.md")
-        base.parent.mkdir(parents=True, exist_ok=True)
-        json_path = base.with_suffix(".json")
-        source_map_path = base.with_name(base.stem + "-source-map.json")
-        md_lines = ["# Context Pack", "", f"- Scope: {target}", f"- Topic: {args.topic or '(none)'}", f"- Selected: {len(selected)}", ""]
-        for item in selected:
-            md_lines.extend([f"## {item['title']}", f"- Source: {item['file']}", f"- Criteria: {item['reason']}", "", item["excerpt"], ""])
-        base.write_text("\n".join(md_lines).strip() + "\n", encoding="utf-8")
-        payload = {
-            "ok": True,
-            "command": "context-build",
-            "scope": str(target),
-            "topic": args.topic,
-            "selection_criteria": {"topic": bool(topic), "max_files": args.max_files},
-            "sources": selected,
-            "artifacts": {"md": str(base), "json": str(json_path), "source_map": str(source_map_path)},
-        }
-        json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        source_map_path.write_text(json.dumps({"sources": [{"file": item["file"], "reason": item["reason"]} for item in selected]}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        emit({**payload, "message": f"Context pack generado: {base}"}, args.json)
-        return 0
-    except Exception as exc:
-        emit({"ok": False, "command": "context-build", "warnings": [], "errors": [str(exc)], "message": str(exc)}, args.json)
-        return 2
+    return handle_context_build(
+        args=args,
+        ensure_runtime_dirs=ensure_runtime_dirs,
+        resolve_optional_vault_path=resolve_optional_vault_path,
+        gather_markdown_scope=gather_markdown_scope,
+        safe_read_text=safe_read_text,
+        parse_frontmatter=parse_frontmatter,
+        extract_title=extract_title,
+        strip_existing_frontmatter=strip_existing_frontmatter,
+        score_query_match=score_query_match,
+        summarize=summarize,
+        now_date=now_date,
+        workspace=WORKSPACE,
+        unique_path=unique_path,
+        emit=emit,
+    )
 
 
 def session_file(name: str) -> Path:
