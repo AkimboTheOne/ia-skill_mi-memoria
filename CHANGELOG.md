@@ -11,6 +11,8 @@
 - Refactor por capa `commands` extendido: `context`, `explain`, `ask`, `run normalize` y `validate` también delegan a handlers modulares, manteniendo contratos operativos y pruebas existentes.
 - Refactor contextual/calidad: `session`, `query`, `context-build`, `classify`, `review`, `link` y `summarize` delegan a módulos `commands` especializados con pruebas retro-compatibles en verde.
 - Refactor productivo inicial: `capture`, `daily` y `decision` delegan en `cli/commands/production_commands.py` manteniendo contratos JSON y cobertura de pruebas existente.
+- Refactor analítico/safeguard: `index`, `timeline`, `drift-detection`, `curate`, `publish`, `remember`, `archive` y `apply` delegan en módulos `commands` dedicados.
+- Se agrega test de coherencia entre `capabilities --json` y `docs/skill-manifest.json` para asegurar metadata machine-first completa por comando.
 
 ## v0.4.1
 
